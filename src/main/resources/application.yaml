@@ -1,0 +1,33 @@
+﻿collectconfig:
+  sotfwareInfoUrl: 
+  apppkgInfoUrl: 
+  projectsInfoUrl: 
+server:
+  port: 8080
+
+
+gitee:
+  fork:
+    accessToken: 
+    postV5ReposOwnerRepoForksUrl: 
+    owner:
+    email: 
+    name: 
+
+  premiumapp:
+    owner:
+    repo:
+
+
+  pr:
+    titleTemplate:  软件市场精品应用%s镜像自动更新,%s->%s
+    bodyTemplate:
+    issueTitleTemplate:  软件市场精品应用%s镜像自动更新,%s->%s
+
+  url:
+    postV5ReposOwnerRepoForksUrl: 
+    giteeGetV5ReposOwnerRepoPullsUrl: 
+    contentsUrl: 
+
+softwareconfig:
+  schedule: 0 0 1 * * ?
