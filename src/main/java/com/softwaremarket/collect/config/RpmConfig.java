@@ -6,13 +6,10 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @Data
-@ConfigurationProperties(prefix = "gitee.url")
-public class GiteeUrlConfig {
-    String postV5ReposOwnerRepoForksUrl;
-    String giteeGetV5ReposOwnerRepoPullsUrl;
-
-    String contentsUrl;
-
-    String reposInfoUrl;
-
+@ConfigurationProperties(prefix = "softwareconfig.rpm")
+public class RpmConfig {
+    //仓库
+    String repo;
+    //
+    private String owner;
 }

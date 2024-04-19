@@ -163,7 +163,7 @@ public class HttpRequestUtil {
                 }
             }
             URI uri = builder.build();
-            // log.info("请求地址：" + uri);
+             log.info("请求地址：" + uri);
             // 设置请求地址
             httpGet.setURI(uri);
             // 发送请求，返回响应对象
@@ -174,7 +174,7 @@ public class HttpRequestUtil {
                 // 获取响应数据
                 resultJson = EntityUtils.toString(response.getEntity(), encoding);
             } else {
-                log.error("响应失败，状态码：" + status + " url:" + url);
+                log.error("响应失败，状态码：" + status + " url:" + uri);
             }
         } catch (Exception e) {
             log.error("发送get请求失败", e);

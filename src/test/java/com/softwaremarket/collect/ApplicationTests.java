@@ -1,29 +1,23 @@
 package com.softwaremarket.collect;
 
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
-import com.gitee.sdk.gitee5j.model.CompleteBranch;
+import com.alibaba.fastjson.JSONObject;
 import com.gitee.sdk.gitee5j.model.Issue;
-import com.gitee.sdk.gitee5j.model.RepoBranchesBody;
-import com.gitee.sdk.gitee5j.model.RepoPullsBody;
 import com.softwaremarket.collect.config.ForkConfig;
 import com.softwaremarket.collect.config.PremiumAppConfig;
 import com.softwaremarket.collect.config.PulllRequestConfig;
+import com.softwaremarket.collect.config.RpmConfig;
 import com.softwaremarket.collect.handler.SoftVersionInfoHandler;
 import com.softwaremarket.collect.service.IGiteeService;
-import com.softwaremarket.collect.task.UpstreamVersionTask;
-import com.softwaremarket.collect.util.DateTimeStrUtils;
-import lombok.RequiredArgsConstructor;
+import com.softwaremarket.collect.task.PremiumAppVersionTask;
+import com.softwaremarket.collect.task.RpmVersionTask;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.core.ApplicationContext;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
@@ -49,7 +43,7 @@ public class ApplicationTests {
 
 
     @Autowired
-    UpstreamVersionTask upstreamVersionTask;
+    PremiumAppVersionTask upstreamVersionTask;
 
     @Autowired
     SoftVersionInfoHandler softVersionInfoHandler;
@@ -62,6 +56,11 @@ public class ApplicationTests {
     @Autowired
     PremiumAppConfig premiumapp;
 
+    @Autowired
+    RpmConfig rpmConfig;
+    @Autowired
+    RpmVersionTask rpmVersionTask;
+
     @Before
     public void setupMockMvc() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
@@ -70,11 +69,14 @@ public class ApplicationTests {
 
     @Test
     public void test() throws Exception {
+       // Issue issue = softVersionInfoHandler.createIssue(forkConfig.getAccessToken(), rpmConfig.getRepo(), "prTitle", "curl");
+        //   rpmVersionTask.rpmAutocommit();
+       // softVersionInfoHandler.handleRpm(new JSONObject(), new JSONObject());
         //  System.out.println(softVersionInfoHandler.createIssue(forkConfig.getAccessToken(), premiumapp.getOwner(),String.format(pulllRequestConfig.getTitleTemplate(), "redis", "6.2.7", "9.0.4"),premiumapp.getRepo()));
-          upstreamVersionTask.getUpstreamVersionInfo();
+        //  upstreamVersionTask.premiumAppAutocommitLatestOsVersion();
         //   iGiteeService.getContents("li-fanlakers","openeuler-docker-images2024-03-26","/","ba0f9023244ce9c6aee590752e7dca1a");
 
-   //     System.out.println(softVersionInfoHandler.createIssue(forkConfig.getAccessToken(), "opensourceway",String.format(pulllRequestConfig.getTitleTemplate(), "redis", "6.2.7", "9.0.4"),"EaseSearch"));
+        //     System.out.println(softVersionInfoHandler.createIssue(forkConfig.getAccessToken(), "opensourceway",String.format(pulllRequestConfig.getTitleTemplate(), "redis", "6.2.7", "9.0.4"),"EaseSearch"));
       /*  RepoBranchesBody repoBranchesBody = new RepoBranchesBody();
         repoBranchesBody.setRefs("master");
         repoBranchesBody.branchName("redis软件市场自动升级"+ DateTimeStrUtils.getTodayDate());

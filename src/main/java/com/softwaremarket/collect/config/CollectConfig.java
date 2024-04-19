@@ -14,4 +14,5 @@ public class CollectConfig {
     String apppkgInfoUrl;
     String projectsInfoUrl;
     String versionsInfoUrl;
+    String openEulerOsVersionInfoUrl;
 }

@@ -24,10 +24,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -85,10 +88,11 @@ public class GiteeService implements IGiteeService {
 
         ApiClient defaultClient = Configuration.getDefaultApiClient();
 
-        // Configure OAuth2 access token for authorization: OAuth2
         OAuth OAuth2 = (OAuth) defaultClient.getAuthentication("OAuth2");
         OAuth2.setAccessToken(token);
-
+        System.out.println(token);
+        System.out.println(owner);
+        System.out.println(body);
         IssuesApi apiInstance = new IssuesApi();
         try {
             result = apiInstance.postReposOwnerIssues(owner, body);
@@ -227,5 +231,41 @@ public class GiteeService implements IGiteeService {
         }
         return result;
     }
+
+    @Override
+    public HashSet<String> getReposProjects(String repo, String token) {
+        HashSet<String> projectSet = new HashSet<>();
+        JSONArray resultArray = new JSONArray();
+        Integer page = 0;
+        String orgsUrl = String.valueOf(giteeUrlConfig.getReposInfoUrl()).replace("{org}", repo).replace("{token}", token);
+        do {
+            page++;
+            StringBuilder urlBuilder = null;
+            try {
+                urlBuilder = new StringBuilder(orgsUrl).append(URLEncoder.encode(String.valueOf(page), "utf-8"));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
+            String httpResponse = HttpRequestUtil.sendGet(urlBuilder.toString(), new HashMap<>());
+            if (httpResponse != null) {
+                resultArray = JSONArray.parseArray(httpResponse);
+                if (CollectionUtils.isEmpty(resultArray))
+                    return projectSet;
+                resultArray.stream().forEach(a -> {
+                    try {
+                        JSONObject each = new JSONObject((Map) a);
+                        projectSet.add(each.getString("name"));
+                    } catch (Exception e) {
+                        log.error("gitee数据处理错误：" + e);
+                    }
+                });
+
+            }
+        } while (resultArray != null && resultArray.size() == 20);
+
+        return projectSet;
+    }
+
 
 }

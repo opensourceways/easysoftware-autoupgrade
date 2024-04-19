@@ -2,10 +2,7 @@ package com.softwaremarket.collect.handler;
 
 import com.alibaba.fastjson.JSONObject;
 import com.gitee.sdk.gitee5j.model.*;
-import com.softwaremarket.collect.config.GiteeUrlConfig;
-import com.softwaremarket.collect.config.PremiumAppConfig;
-import com.softwaremarket.collect.config.PulllRequestConfig;
-import com.softwaremarket.collect.config.ForkConfig;
+import com.softwaremarket.collect.config.*;
 import com.softwaremarket.collect.dto.TreeEntryExpandDto;
 import com.softwaremarket.collect.enums.CommitInfoEnum;
 import com.softwaremarket.collect.enums.TreeTypeEnum;
@@ -20,12 +17,11 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -38,23 +34,87 @@ public class SoftVersionInfoHandler {
     private final PulllRequestConfig pulllRequestConfig;
     private final ForkConfig forkConfig;
     private final GiteeUrlConfig giteeUrlConfig;
+    private final RpmConfig rpmConfig;
+
+    public void handleRpm(JSONObject upObj, JSONObject communityObj) {
+        String community_latest_version = communityObj.getString("latest_version");
+        String upObj_latest_version = upObj.getString("latest_version");
+        String os_version = communityObj.getString("os_version");
+        // 需要更新的软件 name
+        String name = "curl";  //communityObj.getString("name");
+
+
+        String branch = os_version;
+        String prTitle = String.format(pulllRequestConfig.getTitleTemplate(), name + "-" + communityObj.getString("os_version"), community_latest_version, upObj_latest_version);
+        // 版本相同或者已经提交过相同pr将不再处理
+        if (upObj_latest_version.equals(community_latest_version) ||
+                checkHasCreatePR(prTitle, rpmConfig.getRepo(), name, forkConfig.getAccessToken())) ;
+
+
+        //获取fork后的仓库信息
+        List<JSONObject> contents = giteeService.getContents(forkConfig.getOwner(), name, "/", forkConfig.getAccessToken(), branch);
+
+        //代码提交、pr的源分支
+        String handleBranch = name + "软件市场自动升级" + DateTimeStrUtils.getTodayDate();
+
+        if (CollectionUtils.isEmpty(contents)) {
+            // fork仓库作为中间操作仓库
+            JSONObject forkedObj = forkStore(rpmConfig.getRepo(), name, forkConfig.getAccessToken(), name, name);
+            try {
+                //线程休眠 fork仓库有延迟
+                TimeUnit.SECONDS.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            contents = giteeService.getContents(forkConfig.getOwner(), name, "/", forkConfig.getAccessToken(), branch);
+            if (CollectionUtils.isEmpty(forkedObj)) {
+                log.info("RPM仓库fork失败 projrct：{}", name);
+                return;
+            }
+
+            if (CollectionUtils.isEmpty(contents)) {
+                log.info("RPM仓库内容获取失败失败 projrct：{},branch：{}", name, branch);
+                return;
+            }
+
+        }
+        contents = contents.stream().filter(a -> {
+            return (name + ".spec").equals(a.getString("name"));
+        }).collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(contents)) {
+            log.info("仓库中没有 spec文件");
+            return;
+        }
+        JSONObject specFileInfo = contents.get(0);
+        String path = specFileInfo.getString("path");
+        RepoCommitsBody repoCommitsBody = handleRpmCommitsBody(name, path, branch, community_latest_version, upObj_latest_version);
+        if (repoCommitsBody != null) {
+            RepoCommitWithFiles repoCommitWithFiles = giteeService.postReposOwnerRepoCommits(forkConfig.getAccessToken(), forkConfig.getOwner(), name, repoCommitsBody);
+            log.info("文件commit update成功：" + repoCommitWithFiles.getCommentsUrl());
+            // 创建issue
+            Issue issue = createIssue(forkConfig.getAccessToken(), rpmConfig.getRepo(), prTitle, name);
+            //提交pr并和issue关联
+            PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(forkConfig.getAccessToken(), rpmConfig.getRepo(), name, createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, branch));
+            log.info("pr 已提交：" + pullRequest);
+        }
+
+    }
+
 
     public void handlePremiumApp(JSONObject upObj, JSONObject communityObj) {
         String community_latest_version = communityObj.getString("latest_version");
         String upObj_latest_version = upObj.getString("latest_version");
         String os_version = communityObj.getString("os_version");
+        String latest_os_version = communityObj.getString("latestOsVersion");
         // 需要更新的软件 name
         String name = communityObj.getString("name");
-        /*communityObj.put("os_version", "22.03-lts");
 
-        communityObj.put("latest_version", "6.2.7");*/
-
-
-        String prTitle = String.format(pulllRequestConfig.getTitleTemplate(), name + "-" + communityObj.getString("os_version"), community_latest_version, upObj_latest_version);
+        String prTitle = String.format(pulllRequestConfig.getTitleTemplate(), name + "-" + (latest_os_version == null ? os_version : latest_os_version), community_latest_version, upObj_latest_version);
 
         // 版本相同或者已经提交过相同pr将不再处理
         if (upObj_latest_version.equals(community_latest_version) ||
-                checkHasCreatePR(prTitle))
+                checkHasCreatePR(prTitle, premiumAppConfig.getOwner(), premiumAppConfig.getRepo(), forkConfig.getAccessToken()))
             return;
 
 
@@ -62,17 +122,25 @@ public class SoftVersionInfoHandler {
         List<JSONObject> contents = giteeService.getContents(forkConfig.getOwner(), premiumAppConfig.getRepo(), "/", forkConfig.getAccessToken(), "master");
 
         //代码提交、pr的源分支
-        String handleBranch = name + "软件市场自动升级" + DateTimeStrUtils.getTodayDate();
+        String handleBranch = name + "-" + (latest_os_version == null ? os_version : latest_os_version) + "软件市场自动升级" + DateTimeStrUtils.getTodayDate();
 
         if (CollectionUtils.isEmpty(contents)) {
             // fork仓库作为中间操作仓库
-            JSONObject forkedObj = forkStore();
-
+            JSONObject forkedObj = forkStore(premiumAppConfig.getOwner(), premiumAppConfig.getRepo(), forkConfig.getAccessToken(), premiumAppConfig.getRepo(), premiumAppConfig.getRepo());
+            try {
+                //线程休眠 fork仓库有延迟
+                TimeUnit.SECONDS.sleep(5);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             contents = giteeService.getContents(forkConfig.getOwner(), premiumAppConfig.getRepo(), "/", forkConfig.getAccessToken(), "master");
             if (CollectionUtils.isEmpty(forkedObj) || CollectionUtils.isEmpty(contents)) {
                 log.info("精品仓库fork失败");
                 return;
             }
+
+        } else {
+            // 强制更新代码
 
         }
 
@@ -88,7 +156,7 @@ public class SoftVersionInfoHandler {
 
 
         // 判断master分支当前app版本是否已经存在
-        if (checkHasExsitedVersion(currentAppTreeInfo.getString("sha"), os_version, upObj_latest_version))
+        if (checkHasExsitedVersion(currentAppTreeInfo.getString("sha"), latest_os_version == null ? os_version : latest_os_version, upObj_latest_version))
             return;
 
         // 判断master中是否有升级需要的原始信息
@@ -103,7 +171,7 @@ public class SoftVersionInfoHandler {
         giteeService.postReposOwnerRepoBranches(forkConfig.getAccessToken(), forkConfig.getOwner(), premiumAppConfig.getRepo(), repoBranchesBody);
 
 
-        contents = giteeService.getContents(forkConfig.getOwner(), premiumAppConfig.getRepo(), "/", forkConfig.getAccessToken(), handleBranch);
+        //  contents = giteeService.getContents(forkConfig.getOwner(), premiumAppConfig.getRepo(), "/", forkConfig.getAccessToken(), handleBranch);
 
 
         if (!CollectionUtils.isEmpty(contents)) {
@@ -111,12 +179,14 @@ public class SoftVersionInfoHandler {
                 return name.equals(a.getString("name"));
             }).collect(Collectors.toList());
             JSONObject object = contents.get(0);
-            //获取文件数
+            //获取文件树
             List<TreeEntryExpandDto> treeBlob = getTreeBlob(object.getString("name"), premiumAppConfig.getRepo(), object.getString("sha"));
             //获取committbody
-            RepoCommitsBody treeRepoCommitsBody = getTreeRepoCommitsBody(treeBlob, communityObj.getString("os_version").toUpperCase(Locale.ROOT), upObj.getString("latest_version"));
+            RepoCommitsBody treeRepoCommitsBody = getTreeRepoCommitsBody(String.format(CommitInfoEnum.PremiumApp.getMessage(), latest_os_version == null ? os_version.toLowerCase(Locale.ROOT) : latest_os_version.toLowerCase(Locale.ROOT), name, upObj_latest_version), CommitInfoEnum.PremiumApp.getBranch());
+            //对每一个文件提交信息出理
+            getGitActions(treeRepoCommitsBody.getActions(), treeBlob);
             //对commit信息处理
-            handleTreeRepoCommitsBody(handleBranch, treeRepoCommitsBody, communityObj.getString("latest_version"), upObj.getString("latest_version"));
+            handleTreeRepoCommitsBody(handleBranch, treeRepoCommitsBody, community_latest_version, upObj_latest_version, os_version, latest_os_version);
             //提交commit
             RepoCommitWithFiles repoCommitWithFiles = giteeService.postReposOwnerRepoCommits(forkConfig.getAccessToken(), forkConfig.getOwner(), premiumAppConfig.getRepo(), treeRepoCommitsBody);
             if (repoCommitWithFiles != null) {
@@ -124,9 +194,8 @@ public class SoftVersionInfoHandler {
                 // 创建issue
                 Issue issue = createIssue(forkConfig.getAccessToken(), premiumAppConfig.getOwner(), prTitle, premiumAppConfig.getRepo());
                 //提交pr并和issue关联
-                PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(forkConfig.getAccessToken(), premiumAppConfig.getOwner(), premiumAppConfig.getRepo(), createRepoPullsBody(issue, handleBranch));
+                PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(forkConfig.getAccessToken(), premiumAppConfig.getOwner(), premiumAppConfig.getRepo(), createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, CommitInfoEnum.PremiumApp.getBranch()));
                 log.info("pr 已提交：" + pullRequest);
-
             }
 
         }
@@ -134,13 +203,49 @@ public class SoftVersionInfoHandler {
     }
 
 
-    private RepoPullsBody createRepoPullsBody(Issue issue, String branch) {
+    private RepoCommitsBody handleRpmCommitsBody(String name, String path, String branch, String oldestVersion, String latestVersion) {
+        RepoCommitsBody repoCommitsBody = null;
+        File file = giteeService.getReposOwnerRepoRawPath(forkConfig.getAccessToken(), forkConfig.getOwner(), name, path, null);
+        if (file != null) {
+            repoCommitsBody = getTreeRepoCommitsBody(String.format(CommitInfoEnum.RPM.getMessage(), name, latestVersion), branch);
+            List<GitAction> gitActionList = repoCommitsBody.getActions();
+            GitAction gitAction = new GitAction();
+            gitActionList.add(gitAction);
+            gitAction.setAction(GitAction.ActionEnum.UPDATE);
+            gitAction.setEncoding(GitAction.EncodingEnum.TEXT);
+            gitAction.setPath(path);
+            //StringBuilder contentBuilder = new StringBuilder();
+            try {
+                /*try (Scanner sc = new Scanner(new FileReader(file.getPath()))) {
+                    while (sc.hasNextLine()) {  //按行读取字符串
+                        String line = sc.nextLine();
+                        if (line.contains("Version:")) {
+                            line = line.replace(oldestVersion, latestVersion);
+                        }
+                        contentBuilder.append(line);
+                    }
+                }*/
+                String fileContent = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+                fileContent = fileContent.replace(oldestVersion, latestVersion);
+                gitAction.setContent(fileContent);
+                //删除下载的文件
+                FileUtils.forceDelete(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return repoCommitsBody;
+
+    }
+
+
+    private RepoPullsBody createRepoPullsBody(Issue issue, String headBranch, String baseBranch) {
         RepoPullsBody body = new RepoPullsBody();
         //会根据issue的title和body去填充pr的
         body.setTitle("");
         body.setIssue(issue.getNumber());
-        body.setHead(forkConfig.getOwner() + ":" + branch);
-        body.setBase(CommitInfoEnum.PremiumApp.getBranch());
+        body.setHead(headBranch);
+        body.setBase(baseBranch);
         //将pr和issue关联
         body.setBody("#" + issue.getNumber());
         //合并pr后删除源分支
@@ -152,29 +257,59 @@ public class SoftVersionInfoHandler {
     }
 
 
-    private void handleTreeRepoCommitsBody(String branch, RepoCommitsBody treeRepoCommitsBody, String pemiumAppOpeneulerVersion, String latestVersion) {
+    private void handleTreeRepoCommitsBody(String branch, RepoCommitsBody treeRepoCommitsBody, String currentVersion, String latestVersion, String currentOsversion, String latestOsVersion) {
         treeRepoCommitsBody.setBranch(branch);
         List<GitAction> actions = treeRepoCommitsBody.getActions();
         for (int i = 0; i < actions.size(); i++) {
             GitAction gitAction = actions.get(i);
             String path = gitAction.getPath();
-            gitAction.setPath(path.replace(pemiumAppOpeneulerVersion, latestVersion));
-            if (!path.contains(pemiumAppOpeneulerVersion)) {
+            String longCurrentOsVersion = "";
+            //更新文件路径
+            String replacePath = path.replace(currentVersion, latestVersion);
+            if (latestOsVersion != null) {
+                String[] split = replacePath.split("/");
+                replacePath = "";
+                for (int m = 0; m < split.length; m++) {
+                    String s = split[m];
+                    if (s.contains("-sp"))
+                        s = s.replace("-lts-", "");
+                    s = s.replace(".", "").replace("-", "");
+                    if (currentOsversion.contains(s)) {
+                        longCurrentOsVersion = split[m];
+                        split[m] = latestOsVersion;
+                    }
+
+                    replacePath = replacePath + "/" + split[m];
+                }
+            }
+
+            if (path.contains("-sp"))
+                path = path.replace("lts", "");
+            path = path.replace(".", "").replace("-", "");
+            if ((!path.contains(currentVersion.replace(".", "")))
+                    || (!path.contains(currentOsversion.split("oe")[1]))) {
                 actions.remove(i);
                 i--;
                 continue;
             }
+            gitAction.setPath(replacePath);
+
+            //更改dockerfile
             if (path.endsWith("Dockerfile")) {
                 String content = gitAction.getContent();
-                content = content.replace(pemiumAppOpeneulerVersion, latestVersion);
+                content = content.replace(currentVersion, latestVersion);
+                if (latestOsVersion != null) {
+                    content = content.replace(longCurrentOsVersion, latestOsVersion);
+                }
                 gitAction.setContent(content);
             }
+
 
         }
     }
 
     // 判断精品仓库是否存在有当前版本镜像
-    private Boolean checkHasExsitedVersion(String sha, String openeulerVersion, String appVersion) {
+    private Boolean checkHasExsitedVersion(String sha, String osVersion, String appVersion) {
         Tree reposOwnerRepoGitTreesSha = giteeService.getReposOwnerRepoGitTreesSha(forkConfig.getAccessToken(), forkConfig.getOwner(), premiumAppConfig.getRepo(), sha, 56);
         if (reposOwnerRepoGitTreesSha != null) {
             List<TreeEntry> treesSha = reposOwnerRepoGitTreesSha.getTree();
@@ -190,7 +325,7 @@ public class SoftVersionInfoHandler {
                                 path = path.replace("lts", "");
                             path = "oe" + path.replace(".", "").replace("-", "");
                             System.out.println("path:" + path);
-                            if (TreeTypeEnum.TREE.getType().equals(entry.getType()) && (entry.getPath().equals(openeulerVersion) || path.equals(openeulerVersion)))
+                            if (TreeTypeEnum.TREE.getType().equals(entry.getType()) && (entry.getPath().equals(osVersion) || path.equals(osVersion)))
                                 return true;
                         }
                     }
@@ -244,18 +379,18 @@ public class SoftVersionInfoHandler {
 
 
     // 组装文件commit body
-    private RepoCommitsBody getTreeRepoCommitsBody(List<TreeEntryExpandDto> treeBlob, String osversion, String upLatestVersion) {
+    private RepoCommitsBody getTreeRepoCommitsBody(String message, String branch) {
         RepoCommitsBody repoCommitsBody = new RepoCommitsBody();
         List<GitAction> gitActionList = new ArrayList<>();
         repoCommitsBody.setActions(gitActionList);
-        repoCommitsBody.setBranch(CommitInfoEnum.PremiumApp.getBranch());
-        repoCommitsBody.setMessage(String.format(CommitInfoEnum.PremiumApp.getMessage(), osversion, upLatestVersion));
+        repoCommitsBody.setBranch(branch);
+        repoCommitsBody.setMessage(message);
         GitUserBasic gitUserBasic = new GitUserBasic();
         gitUserBasic.setEmail(forkConfig.getEmail());
         gitUserBasic.setName(forkConfig.getName());
         repoCommitsBody.setAuthor(gitUserBasic);
 
-        getGitActions(gitActionList, treeBlob);
+        //     getGitActions(gitActionList, treeBlob);
         return repoCommitsBody;
     }
 
@@ -263,8 +398,10 @@ public class SoftVersionInfoHandler {
     private void getGitActions(List<GitAction> gitActionList, List<TreeEntryExpandDto> treeBlob) {
         for (TreeEntryExpandDto treeEntryExpandDto : treeBlob) {
             String type = treeEntryExpandDto.getType();
-            if (TreeTypeEnum.BLOB.getType().equals(type)) {
+            if (TreeTypeEnum.TREE.getType().equals(type)) {
+                getGitActions(gitActionList, treeEntryExpandDto.getNext());
 
+            } else {
                 GitAction gitAction = new GitAction();
                 gitActionList.add(gitAction);
                 gitAction.setAction(GitAction.ActionEnum.CREATE);
@@ -277,8 +414,6 @@ public class SoftVersionInfoHandler {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            } else if (TreeTypeEnum.TREE.getType().equals(type)) {
-                getGitActions(gitActionList, treeEntryExpandDto.getNext());
             }
         }
 
@@ -299,6 +434,7 @@ public class SoftVersionInfoHandler {
             treeEntryExpandDtoList.add(treeEntryExpandDto);
             String newPath = path + "/" + treeEntry.getPath();
             if (TreeTypeEnum.BLOB.getType().equals(type)) {
+                System.out.println("path:" + newPath);
                 File file = giteeService.getReposOwnerRepoRawPath(forkConfig.getAccessToken(), forkConfig.getOwner(), rep, newPath, null);
                 treeEntryExpandDto.setFile(file);
 
@@ -314,10 +450,10 @@ public class SoftVersionInfoHandler {
     }
 
     //根据openeuler版本、name、前后软化版本判断当前升级是否已经提交过pr
-    private Boolean checkHasCreatePR(String prTitle) {
+    private Boolean checkHasCreatePR(String prTitle, String owner, String repo, String token) {
         List<JSONObject> v5ReposOwnerRepoPulls = new ArrayList<>();
         int page = 0;
-        String url = giteeUrlConfig.getGiteeGetV5ReposOwnerRepoPullsUrl().replace("{owner}", premiumAppConfig.getOwner()).replace("{repo}", premiumAppConfig.getRepo()).replace("{access_token}", forkConfig.getAccessToken());
+        String url = giteeUrlConfig.getGiteeGetV5ReposOwnerRepoPullsUrl().replace("{owner}", owner).replace("{repo}", repo).replace("{access_token}", token);
         do {
             page++;
             v5ReposOwnerRepoPulls.addAll(giteeService.getV5ReposOwnerRepoPulls(url.replace("{page}", String.valueOf(page))));
@@ -336,13 +472,13 @@ public class SoftVersionInfoHandler {
 
 
     // fork 代码仓库到forkConfig.getAccessToken()的代码仓库
-    private JSONObject forkStore() {
+    private JSONObject forkStore(String owner, String repo, String access_token, String name, String path) {
         HashMap<Object, Object> parameter = new HashMap<>();
-        parameter.put("owner", premiumAppConfig.getOwner());
-        parameter.put("repo", premiumAppConfig.getRepo());
-        parameter.put("access_token", forkConfig.getAccessToken());
-        parameter.put("name", premiumAppConfig.getRepo());
-        parameter.put("path", premiumAppConfig.getRepo());
+        parameter.put("owner", owner);
+        parameter.put("repo", repo);
+        parameter.put("access_token", access_token);
+        parameter.put("name", name);
+        parameter.put("path", path);
         return giteeService.fork(parameter);
     }
 

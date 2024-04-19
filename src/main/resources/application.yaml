@@ -1,18 +1,19 @@
-﻿collectconfig:
-  sotfwareInfoUrl: 
-  apppkgInfoUrl: 
-  projectsInfoUrl: 
+collectconfig:
+  sotfwareInfoUrl:
+  apppkgInfoUrl:
+  projectsInfoUrl:
+  openEulerOsVersionInfoUrl:
 server:
   port: 8080
 
 
 gitee:
   fork:
-    accessToken: 
-    postV5ReposOwnerRepoForksUrl: 
+    accessToken:
+    postV5ReposOwnerRepoForksUrl:
     owner:
-    email: 
-    name: 
+    email:
+    name:
 
   premiumapp:
     owner:
@@ -25,9 +26,14 @@ gitee:
     issueTitleTemplate:  软件市场精品应用%s镜像自动更新,%s->%s
 
   url:
-    postV5ReposOwnerRepoForksUrl: 
-    giteeGetV5ReposOwnerRepoPullsUrl: 
-    contentsUrl: 
-
+    postV5ReposOwnerRepoForksUrl:
+    giteeGetV5ReposOwnerRepoPullsUrl:
+    contentsUrl:
+    reposInfoUrl:
 softwareconfig:
-  schedule: 0 0 1 * * ?
+  appkgschedule:
+  appkgOsSchedule:
+  rpmSchedule:
+  rpm:
+    repo: src-openEuler
+    owner:

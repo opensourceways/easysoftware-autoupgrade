@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.gitee.sdk.gitee5j.model.*;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +20,7 @@ public interface IGiteeService {
 
     List<JSONObject> getV5ReposOwnerRepoPulls(String url);
 
-    List<JSONObject> getContents(String owner, String repo, String path, String token,String branch);
+    List<JSONObject> getContents(String owner, String repo, String path, String token, String branch);
 
     Tree getReposOwnerRepoGitTreesSha(String token, String owner, String repo, String sha, Integer recursive);
 
@@ -30,5 +31,8 @@ public interface IGiteeService {
     PullRequest postReposOwnerRepoPulls(String token, String owner, String repo, RepoPullsBody body);
 
 
-    CompleteBranch    postReposOwnerRepoBranches(String token, String owner, String repo, RepoBranchesBody body);
+    CompleteBranch postReposOwnerRepoBranches(String token, String owner, String repo, RepoBranchesBody body);
+
+
+    HashSet<String> getReposProjects(String repo,String token);
 }
