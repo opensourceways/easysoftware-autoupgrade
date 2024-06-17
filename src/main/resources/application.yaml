@@ -3,6 +3,7 @@ collectconfig:
   apppkgInfoUrl:
   projectsInfoUrl:
   openEulerOsVersionInfoUrl:
+  dockerHubOpeneulerOsVersionInfoUrl:
 server:
   port: 8080
 
@@ -10,30 +11,23 @@ server:
 gitee:
   fork:
     accessToken:
-    postV5ReposOwnerRepoForksUrl:
     owner:
     email:
     name:
 
-  premiumapp:
-    owner:
-    repo:
+
 
 
   pr:
-    titleTemplate:  软件市场精品应用%s镜像自动更新,%s->%s
-    bodyTemplate:
-    issueTitleTemplate:  软件市场精品应用%s镜像自动更新,%s->%s
 
-  url:
-    postV5ReposOwnerRepoForksUrl:
-    giteeGetV5ReposOwnerRepoPullsUrl:
-    contentsUrl:
-    reposInfoUrl:
+    rpmPrTitle:
+    rpmIssueNum:
+    appPrTitle:
+    appIssueNum:
+    changelog:
+
+
 softwareconfig:
-  appkgschedule:
-  appkgOsSchedule:
-  rpmSchedule:
-  rpm:
-    repo: src-openEuler
-    owner:
+  appkgschedule: 0 0 1 * * ?
+  appkgOsSchedule: 0 0 3 * * ?
+  rpmSchedule: 0 0 3 * * ?

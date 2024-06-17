@@ -1,23 +1,14 @@
 package com.softwaremarket.collect.task;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.softwaremarket.collect.config.CollectConfig;
-import com.softwaremarket.collect.enums.CollectEnum;
+import com.softwaremarket.collect.dto.PremiumAppUpdateInfoDto;
 import com.softwaremarket.collect.handler.SoftVersionInfoHandler;
 import com.softwaremarket.collect.helper.EasysoftwareVersionHelper;
-import com.softwaremarket.collect.util.HttpRequestUtil;
-import com.softwaremarket.collect.util.HttpResponceUtil;
-import com.softwaremarket.collect.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -29,32 +20,23 @@ public class PremiumAppVersionTask {
 
     private final EasysoftwareVersionHelper easysoftwareVersionHelper;
 
-    @Scheduled(cron = "${softwareconfig.appkgschedule}")
-    public void premiumAppAutocommit() {
+    // @Scheduled(cron = "${softwareconfig.appkgschedule}")
+    public void premiumAppAutocommit(Set<String> appNameSet) {
         log.info("开始自动更新数据");
-        /*String dockerUpurl = String.format(CollectEnum.DOCKER_UP_STREAM.getUrl(), collectConfig.getSotfwareInfoUrl());
-        String dockerUpResult = HttpRequestUtil.sendGet(dockerUpurl, new HashMap<>());
-        JSONObject dockerUpObj = JacksonUtils.toObject(JSONObject.class, dockerUpResult);
-
-        String dockerOpeneulerurl = String.format(CollectEnum.DOCKER_OPENEULER.getUrl(), collectConfig.getSotfwareInfoUrl());
-        String dockerOpeneulerResult = HttpRequestUtil.sendGet(dockerOpeneulerurl, new HashMap<>());
-        JSONObject dockerOpeneulerObj = JacksonUtils.toObject(JSONObject.class, dockerOpeneulerResult);
-        if(!HttpResponceUtil.requestSoftIsSuccess(dockerUpObj) &&  !HttpResponceUtil.requestSoftIsSuccess(dockerOpeneulerObj)){
-            log.info("dockerUpurl: {},result:{}",dockerUpurl,dockerUpResult);
-            log.info("dockerOpeneulerurl: {},result:{}",dockerOpeneulerurl,dockerOpeneulerResult);
-            return;
-        }*/
-
-        Set<String> appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
+        // 从软件市场获取全量精品应用
+        if (appNameSet == null)
+            appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
         System.out.println(appNameSet);
 
         for (String appName : appNameSet) {
             try {
-                JSONObject upObj = new JSONObject();
-                JSONObject openeulerObj = new JSONObject();
-                easysoftwareVersionHelper.getEasysoftVersion(appName, upObj, openeulerObj);
-                if (upObj.size() > 0 && openeulerObj.size() > 0)
-                    softVersionInfoHandler.handlePremiumApp(upObj, openeulerObj);
+                PremiumAppUpdateInfoDto premiumAppUpdateInfoDto = new PremiumAppUpdateInfoDto();
+                //从软件市场获取精品应用上下游版本
+                easysoftwareVersionHelper.initUpdateInfo(appName, premiumAppUpdateInfoDto);
+                if (premiumAppUpdateInfoDto.checkInfoIsComplete() && !premiumAppUpdateInfoDto.getOeAppLatestVersion().equals(premiumAppUpdateInfoDto.getUpAppLatestVersion())) {
+                    log.info("精品应用{}当前欧拉版本：{},镜像版本：{},上游最新版本：{},触发自动更新！", appName, premiumAppUpdateInfoDto.getCommunityCurrentOsVersion(), premiumAppUpdateInfoDto.getOeAppLatestVersion(), premiumAppUpdateInfoDto.getUpAppLatestVersion());
+                    softVersionInfoHandler.handlePremiumApp(premiumAppUpdateInfoDto);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -62,29 +44,45 @@ public class PremiumAppVersionTask {
 
     }
 
-
-    @Scheduled(cron = "${softwareconfig.appkgOsSchedule}")
-    public void premiumAppAutocommitLatestOsVersion() {
+    // @Scheduled(cron = "${softwareconfig.appkgschedule}")
+    public void premiumAppAutocommitLatestOsVersion(Set<String> appNameSet) {
         log.info("开始自动更新数据精品应用openeuler最新系统数据");
-        Set<String> appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
-        appNameSet.add("loki");
+        // 从软件市场获取全量精品应用
+        if (appNameSet == null)
+            appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
         String openeulerLatestOsVersion = easysoftwareVersionHelper.getOpeneulerLatestOsVersion().split("openEuler-")[1].toLowerCase(Locale.ROOT);
         for (String appName : appNameSet) {
             try {
-                JSONObject upObj = new JSONObject();
-                JSONObject openeulerObj = new JSONObject();
-                easysoftwareVersionHelper.getEasysoftVersion(appName, upObj, openeulerObj);
-                String openeulerCurrentOsVersion = openeulerObj.getString("os_version");
-                if (openeulerCurrentOsVersion == null)
+                PremiumAppUpdateInfoDto premiumAppUpdateInfoDto = new PremiumAppUpdateInfoDto();
+                easysoftwareVersionHelper.initUpdateInfo(appName, premiumAppUpdateInfoDto);
+                if (!premiumAppUpdateInfoDto.checkInfoIsComplete() || currentOsVersionLatest(openeulerLatestOsVersion, premiumAppUpdateInfoDto.getCommunityCurrentOsVersion()))
                     continue;
+                premiumAppUpdateInfoDto.setCommunityOtherOsVersion(openeulerLatestOsVersion);
+                softVersionInfoHandler.handlePremiumApp(premiumAppUpdateInfoDto);
 
-                if (currentOsVersionLatest(openeulerLatestOsVersion, openeulerCurrentOsVersion))
-                    continue;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
+    }
 
-                if (upObj.size() > 0 && openeulerObj.size() > 0) {
-                    openeulerObj.put("latestOsVersion", openeulerLatestOsVersion);
-                    softVersionInfoHandler.handlePremiumApp(upObj, openeulerObj);
+    //  @Scheduled(cron = "${softwareconfig.appkgschedule}")
+    public void premiumAppAllOsVersionUpdate(Set<String> appNameSet) {
+        List<String> dockerHubOpeneulerOsVersion =new ArrayList<>(); //easysoftwareVersionHelper.getDockerHubOpeneulerOsVersion();
+        dockerHubOpeneulerOsVersion.add("24.03-lts");
+        log.info("开始自动更新数据精品应用openeuler所有系统数据");
+        if (appNameSet == null)
+            appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
+        for (String appName : appNameSet) {
+            try {
+                PremiumAppUpdateInfoDto premiumAppUpdateInfoDto = new PremiumAppUpdateInfoDto();
+                //从软件市场获取精品应用上下游版本
+                easysoftwareVersionHelper.initUpdateInfo(appName, premiumAppUpdateInfoDto);
+                premiumAppUpdateInfoDto.setOeAppLatestVersion("2.11.1");
+                if (premiumAppUpdateInfoDto.checkInfoIsComplete()) {
+                    log.info("精品应用{}当前欧拉版本：{},镜像版本：{},上游最新版本：{},触发自动更新！", appName, premiumAppUpdateInfoDto.getCommunityCurrentOsVersion(), premiumAppUpdateInfoDto.getOeAppLatestVersion(), premiumAppUpdateInfoDto.getUpAppLatestVersion());
+                    softVersionInfoHandler.batchUpdatePremiumApp(dockerHubOpeneulerOsVersion, premiumAppUpdateInfoDto);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

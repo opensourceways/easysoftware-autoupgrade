@@ -1,8 +1,10 @@
 package com.softwaremarket.collect.helper;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.softwaremarket.collect.config.CollectConfig;
+import com.softwaremarket.collect.dto.PremiumAppUpdateInfoDto;
 import com.softwaremarket.collect.util.HttpRequestUtil;
 import com.softwaremarket.collect.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +22,7 @@ import java.util.stream.Collectors;
 public class EasysoftwareVersionHelper {
     private final CollectConfig collectConfig;
 
-    public void getEasysoftVersion(String appName, JSONObject upObj, JSONObject openeulerObj) {
+    public void initUpdateInfo(String appName, PremiumAppUpdateInfoDto premiumAppUpdateInfoDto) {
         String projectsInfoUrl = collectConfig.getProjectsInfoUrl();
         String result = HttpRequestUtil.sendGet(projectsInfoUrl + appName, new HashMap<>());
         if (result != null) {
@@ -35,16 +37,16 @@ public class EasysoftwareVersionHelper {
             for (Object item : items) {
                 JSONObject o = new JSONObject((Map) item);
                 if ("app_up".equals(o.getString("tag"))) {
-                    upObj.put("latest_version", o.getString("version"));
+                    premiumAppUpdateInfoDto.setUpAppLatestVersion(o.getString("version"));
                 }
                 if ("app_openeuler".equals(o.getString("tag"))) {
                     String version = o.getString("version");
-                    openeulerObj.put("latest_version", version);
-                    openeulerObj.put("name", appName);
+                    premiumAppUpdateInfoDto.setAppName(appName);
+                    premiumAppUpdateInfoDto.setOeAppLatestVersion(version);
                     JSONArray rawVersions = o.getJSONArray("raw_versions");
                     List collect = (List) rawVersions.stream().filter(v -> String.valueOf(v).contains(version)).collect(Collectors.toList());
                     if (!CollectionUtils.isEmpty(collect))
-                        openeulerObj.put("os_version", String.valueOf(collect.get(0)).split(version + "-")[1]);
+                        premiumAppUpdateInfoDto.setCommunityCurrentOsVersion(String.valueOf(collect.get(0)).split(version + "-")[1]);
                 }
             }
         }
@@ -71,14 +73,9 @@ public class EasysoftwareVersionHelper {
                 if (!CollectionUtils.isEmpty(list)) {
                     list.stream().forEach(a -> {
                         JSONObject app = new JSONObject((Map) a);
-                        JSONArray children = app.getJSONArray("children");
-                        if (!CollectionUtils.isEmpty(children)) {
-                            children.stream().forEach(c -> {
-                                JSONObject child = new JSONObject((Map) c);
-                                if ("loki".equals(String.valueOf(child.get("name")).toLowerCase(Locale.ROOT)))
-                                    appNameSet.add(String.valueOf(child.get("name")).toLowerCase(Locale.ROOT));
-                            });
-                        }
+                        //grafana  prometheus
+                        if ("loki".equals(String.valueOf(app.get("name")).toLowerCase(Locale.ROOT)))
+                            appNameSet.add(String.valueOf(app.get("name")).toLowerCase(Locale.ROOT));
                     });
                     if (list.size() == 50)
                         currentPage++;
@@ -96,6 +93,27 @@ public class EasysoftwareVersionHelper {
             JSONObject resultObj = JacksonUtils.toObject(JSONObject.class, result);
             JSONArray data = resultObj.getJSONArray("data");
             return data.get(0) + "";
+        }
+        return null;
+    }
+
+
+    public List<String> getDockerHubOpeneulerOsVersion() {
+        String openEulerOsVersionInfoUrl = collectConfig.getDockerHubOpeneulerOsVersionInfoUrl();
+        JSONObject paramMap = new JSONObject();
+        paramMap.put("dry_run", "true");
+        paramMap.put("version_url", "openeuler/openeuler");
+        paramMap.put("version_scheme", "ModifiedSemantic");
+        paramMap.put("homepage", "https://hub.docker.com/r/openeuler/openeuler");
+
+        HashMap<String, String> headerMap = new HashMap<>();
+        headerMap.put("Authorization", "token ftFl8LaRsu5bRycmY10OYWu0UqitfEUCaFhcxQC6");
+        headerMap.put("Content-Type", "application/json");
+        String result = HttpRequestUtil.sendPost(openEulerOsVersionInfoUrl, headerMap, paramMap);
+        if (result != null) {
+            JSONObject resultObj = JacksonUtils.toObject(JSONObject.class, result);
+            JSONArray rawVersions = resultObj.getJSONArray("raw_versions");
+            return JSON.parseArray(JSONObject.toJSONString(rawVersions), String.class);
         }
         return null;
     }

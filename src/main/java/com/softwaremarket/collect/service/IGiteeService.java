@@ -11,8 +11,6 @@ import java.util.Map;
 public interface IGiteeService {
     JSONObject fork(Map parameter);
 
-    Boolean updateStorehouse(Map parameter);
-
 
     PullRequest createPullRequest(RepoPullsBody body, String token, String owner, String repo);
 
@@ -34,5 +32,6 @@ public interface IGiteeService {
     CompleteBranch postReposOwnerRepoBranches(String token, String owner, String repo, RepoBranchesBody body);
 
 
-    HashSet<String> getReposProjects(String repo,String token);
+    HashSet<String> getReposProjects(String repo, String token);
+
 }

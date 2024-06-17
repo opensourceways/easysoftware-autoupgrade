@@ -65,7 +65,7 @@ public class HttpRequestUtil {
             CloseableHttpResponse response = client.execute(httpPost);
             // 获取响应状态
             int status = response.getStatusLine().getStatusCode();
-            if (status == HttpStatus.SC_OK || status==HttpStatus.SC_CREATED) {
+            if (status == HttpStatus.SC_OK || status == HttpStatus.SC_CREATED) {
                 // 获取响应结果
                 resultJson = EntityUtils.toString(response.getEntity(), encoding);
             } else {
@@ -90,7 +90,7 @@ public class HttpRequestUtil {
     public static String sendPost(String url, JSONObject data) {
         // 设置默认请求头
         Map<String, String> headers = new HashMap<>();
-        headers.put("content-type", "application/json");
+        headers.put("Content-Type", "application/json;charset=UTF-8");
 
         return sendPost(url, headers, JacksonUtils.writeValueAsString(data), ENCODING);
     }
@@ -158,12 +158,12 @@ public class HttpRequestUtil {
             URIBuilder builder = new URIBuilder(url);
             // 封装参数
             if (params != null) {
-                for (String key : params.keySet()) {
-                    builder.addParameter(key, params.get(key).toString());
+                for (Map.Entry<String, Object> param : params.entrySet()) {
+                    builder.addParameter(param.getKey(), param.getValue().toString());
                 }
             }
             URI uri = builder.build();
-             log.info("请求地址：" + uri);
+            log.info("请求地址：" + uri);
             // 设置请求地址
             httpGet.setURI(uri);
             // 发送请求，返回响应对象

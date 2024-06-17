@@ -15,4 +15,5 @@ public class CollectConfig {
     String projectsInfoUrl;
     String versionsInfoUrl;
     String openEulerOsVersionInfoUrl;
+    String dockerHubOpeneulerOsVersionInfoUrl;
 }

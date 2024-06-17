@@ -8,7 +8,9 @@ import org.springframework.context.annotation.Configuration;
 @Data
 @ConfigurationProperties(prefix = "gitee.pr")
 public class PulllRequestConfig {
-    private String titleTemplate;
-    private String bodyTemplate;
-    private String issueTitleTemplate;
+    private String rpmPrTitle;
+    private String rpmIssueNum;
+    private String appPrTitle;
+    private String appIssueNum;
+    private String changelog;
 }

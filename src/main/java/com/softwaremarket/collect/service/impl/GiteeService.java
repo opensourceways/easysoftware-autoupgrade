@@ -1,6 +1,5 @@
 package com.softwaremarket.collect.service.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.gitee.sdk.gitee5j.ApiClient;
@@ -11,11 +10,9 @@ import com.gitee.sdk.gitee5j.api.PullRequestsApi;
 import com.gitee.sdk.gitee5j.api.RepositoriesApi;
 import com.gitee.sdk.gitee5j.auth.OAuth;
 import com.gitee.sdk.gitee5j.model.*;
-import com.softwaremarket.collect.config.CollectConfig;
 import com.softwaremarket.collect.config.ForkConfig;
-import com.softwaremarket.collect.config.GiteeUrlConfig;
 import com.softwaremarket.collect.config.PulllRequestConfig;
-import com.softwaremarket.collect.enums.CollectEnum;
+import com.softwaremarket.collect.enums.GiteeUrlEnum;
 import com.softwaremarket.collect.service.IGiteeService;
 import com.softwaremarket.collect.util.HttpRequestUtil;
 import com.softwaremarket.collect.util.JacksonUtils;
@@ -41,25 +38,17 @@ import java.util.Map;
 public class GiteeService implements IGiteeService {
     private final PulllRequestConfig pulllRequestConfig;
     private final ForkConfig forkConfig;
-    private final GiteeUrlConfig giteeUrlConfig;
 
     @Override
     public JSONObject fork(Map parameter) {
-        String forkUrl = String.format(giteeUrlConfig.getPostV5ReposOwnerRepoForksUrl(), parameter.get("owner"), parameter.get("repo"));
+        String forkUrl = String.format(GiteeUrlEnum.PostV5ReposOwnerRepoForksUrl.getUrl(), parameter.get("owner"), parameter.get("repo"));
         parameter.remove("owner");
         parameter.remove("repo");
-        System.out.println(forkUrl);
-        System.out.println(parameter);
         String result = HttpRequestUtil.sendPost(forkUrl, parameter);
         if (!StringUtils.isEmpty(result)) {
             return JacksonUtils.toObject(JSONObject.class, result);
         }
         return new JSONObject();
-    }
-
-    @Override
-    public Boolean updateStorehouse(Map parameter) {
-        return null;
     }
 
     @Override
@@ -90,9 +79,6 @@ public class GiteeService implements IGiteeService {
 
         OAuth OAuth2 = (OAuth) defaultClient.getAuthentication("OAuth2");
         OAuth2.setAccessToken(token);
-        System.out.println(token);
-        System.out.println(owner);
-        System.out.println(body);
         IssuesApi apiInstance = new IssuesApi();
         try {
             result = apiInstance.postReposOwnerIssues(owner, body);
@@ -118,7 +104,7 @@ public class GiteeService implements IGiteeService {
     public List<JSONObject> getContents(String owner, String repo, String path, String token, String branch) {
         try {
             path = URLEncoder.encode(path, "GBK");
-            String url = giteeUrlConfig.getContentsUrl().replace("{owner}", owner).replace("{repo}", repo).replace("{path}", path).replace("{access_token}", token).replace("{ref}", branch);
+            String url = GiteeUrlEnum.ContentsUrl.getUrl().replace("{owner}", owner).replace("{repo}", repo).replace("{path}", path).replace("{access_token}", token).replace("{ref}", branch);
             String result = HttpRequestUtil.sendGet(url);
             if (!StringUtils.isEmpty(result)) {
                 return JacksonUtils.toObjectList(JSONObject.class, result);
@@ -144,7 +130,6 @@ public class GiteeService implements IGiteeService {
         // Integer | 赋值为1递归获取目录
         try {
             result = apiInstance.getReposOwnerRepoGitTreesSha(owner, repo, sha, recursive);
-            JSON.toJSONString("怎么个事儿：" + result);
         } catch (Exception e) {
             System.err.println("Exception when calling GitDataApi#getReposOwnerRepoGitTreesSha");
             e.printStackTrace();
@@ -198,7 +183,7 @@ public class GiteeService implements IGiteeService {
 
         ApiClient defaultClient = Configuration.getDefaultApiClient();
 
-// Configure OAuth2 access token for authorization: OAuth2
+        // Configure OAuth2 access token for authorization: OAuth2
         OAuth OAuth2 = (OAuth) defaultClient.getAuthentication("OAuth2");
         OAuth2.setAccessToken(token);
 
@@ -237,10 +222,10 @@ public class GiteeService implements IGiteeService {
         HashSet<String> projectSet = new HashSet<>();
         JSONArray resultArray = new JSONArray();
         Integer page = 0;
-        String orgsUrl = String.valueOf(giteeUrlConfig.getReposInfoUrl()).replace("{org}", repo).replace("{token}", token);
+        String orgsUrl = String.valueOf(GiteeUrlEnum.ReposInfoUrl.getUrl()).replace("{org}", repo).replace("{token}", token);
         do {
             page++;
-            StringBuilder urlBuilder = null;
+            StringBuilder urlBuilder = new StringBuilder();
             try {
                 urlBuilder = new StringBuilder(orgsUrl).append(URLEncoder.encode(String.valueOf(page), "utf-8"));
             } catch (UnsupportedEncodingException e) {

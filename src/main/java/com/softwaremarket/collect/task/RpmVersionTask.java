@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Slf4j
@@ -22,19 +23,18 @@ public class RpmVersionTask {
 
     private final EasysoftwareVersionHelper easysoftwareVersionHelper;
     private final SoftVersionInfoHandler softVersionInfoHandler;
-    private final IGiteeService giteeService;
-    private final RpmConfig rpmConfig;
-    private final ForkConfig forkConfig;
 
-    @Scheduled(cron = "${softwareconfig.rpmSchedule}")
+    //@Scheduled(cron = "${softwareconfig.rpmSchedule}")
     public void rpmAutocommit() {
-        Set<String> rpmNameSet = giteeService.getReposProjects(rpmConfig.getRepo(), forkConfig.getAccessToken());
+        //  Set<String> rpmNameSet = giteeService.getReposProjects(rpmConfig.getRepo(), forkConfig.getAccessToken());
+        Set<String> rpmNameSet = new HashSet<>();
+        rpmNameSet.add("curl");
         System.out.println(rpmNameSet);
         for (String appName : rpmNameSet) {
             try {
                 com.alibaba.fastjson.JSONObject upObj = new com.alibaba.fastjson.JSONObject();
                 com.alibaba.fastjson.JSONObject openeulerObj = new JSONObject();
-                easysoftwareVersionHelper.getEasysoftVersion(appName, upObj, openeulerObj);
+              //  easysoftwareVersionHelper.getEasysoftVersion(appName, upObj, openeulerObj);
                 if (upObj.size() > 0 && openeulerObj.size() > 0)
                     softVersionInfoHandler.handleRpm(upObj, openeulerObj);
             } catch (Exception e) {

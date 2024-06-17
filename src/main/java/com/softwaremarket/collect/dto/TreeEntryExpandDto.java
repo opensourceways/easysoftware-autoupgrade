@@ -1,6 +1,5 @@
 package com.softwaremarket.collect.dto;
 
-import com.gitee.sdk.gitee5j.model.Tree;
 import com.gitee.sdk.gitee5j.model.TreeEntry;
 import lombok.Data;
 
