@@ -4,30 +4,57 @@ collectconfig:
   projectsInfoUrl:
   openEulerOsVersionInfoUrl:
   dockerHubOpeneulerOsVersionInfoUrl:
-server:
-  port: 8080
+  dockerHubOpeneulerHomepage:
+  dockerHubOpeneulerAuthorization:
 
-
-gitee:
-  fork:
-    accessToken:
-    owner:
-    email:
-    name:
-
-
-
-
-  pr:
-
-    rpmPrTitle:
-    rpmIssueNum:
-    appPrTitle:
-    appIssueNum:
-    changelog:
 
 
 softwareconfig:
   appkgschedule: 0 0 1 * * ?
   appkgOsSchedule: 0 0 3 * * ?
   rpmSchedule: 0 0 3 * * ?
+
+
+
+softcenter:
+  application:
+    repoInfo:
+      owner:
+      repo:
+
+    forkInfo:
+      accessToken:
+      owner:
+      email:
+      name:
+      password:
+      scope:
+      clientId:
+      clientSecret:
+
+    prInfo:
+      prTitle:
+      issueNum:
+
+  rpm:
+    repoInfo:
+      owner:
+      repo:
+
+    forkInfo:
+      accessToken:
+      owner:
+      email:
+      name:
+      password:
+      scope:
+      clientId:
+      clientSecret:
+
+    prInfo:
+      prTitle:
+      issueNum:
+      changelog:
+
+server:
+  port: 8080
