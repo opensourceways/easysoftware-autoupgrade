@@ -5,6 +5,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.softwaremarket.autoupgrade.config.CollectConfig;
 import com.softwaremarket.autoupgrade.dto.ApplicationUpdateInfoDto;
+import com.softwaremarket.autoupgrade.dto.ForkInfoDto;
+import com.softwaremarket.autoupgrade.service.IGiteeService;
 import com.softwaremarket.autoupgrade.util.HttpRequestUtil;
 import com.softwaremarket.autoupgrade.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class EasysoftwareVersionHelper {
     private final CollectConfig collectConfig;
+    private final IGiteeService giteeService;
 
     public void initUpdateInfo(String appName, ApplicationUpdateInfoDto premiumAppUpdateInfoDto) {
         String projectsInfoUrl = collectConfig.getProjectsInfoUrl();
@@ -73,8 +76,7 @@ public class EasysoftwareVersionHelper {
                     list.stream().forEach(a -> {
                         JSONObject app = new JSONObject((Map) a);
                         //grafana  prometheus
-                        if ("loki".equals(String.valueOf(app.get("name")).toLowerCase(Locale.ROOT)))
-                            appNameSet.add(String.valueOf(app.get("name")).toLowerCase(Locale.ROOT));
+                        appNameSet.add(String.valueOf(app.get("name")).toLowerCase(Locale.ROOT));
                     });
                     if (list.size() == 50)
                         currentPage++;
@@ -115,5 +117,11 @@ public class EasysoftwareVersionHelper {
             return JSON.parseArray(JSONObject.toJSONString(rawVersions), String.class);
         }
         return null;
+    }
+
+
+    public void getToken(ForkInfoDto forkInfo) {
+        String tokenByPassword = giteeService.getTokenByPassword(forkInfo);
+        forkInfo.setAccessToken(tokenByPassword);
     }
 }

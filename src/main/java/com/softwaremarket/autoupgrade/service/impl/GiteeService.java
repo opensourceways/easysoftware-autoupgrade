@@ -269,7 +269,7 @@ public class GiteeService implements IGiteeService {
                 Long created_at = responseBody.getLong("created_at");
                 Long expires_in = responseBody.getLong("expires_in");
                 Long expires_at = created_at + expires_in;
-                return expires_at + "#" + access_token;
+                return access_token;
             } else {
                 log.error("Error: Unexpected response code: " + response);
             }

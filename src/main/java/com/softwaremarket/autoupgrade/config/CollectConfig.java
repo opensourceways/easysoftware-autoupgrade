@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "collectconfig")
 //采集版本信息配置
 public class CollectConfig {
-    String sotfwareInfoUrl;
     String apppkgInfoUrl;
     String projectsInfoUrl;
     String versionsInfoUrl;

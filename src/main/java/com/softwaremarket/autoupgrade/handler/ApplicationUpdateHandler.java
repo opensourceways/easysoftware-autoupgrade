@@ -157,14 +157,14 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
             handleTreeRepoCommitsBody(handleBranch, treeRepoCommitsBody, oeAppLatestVersion, upAppLatestVersion, communityOsVersion, communityOtherOsVersion);
             //提交commit
             RepoCommitWithFiles repoCommitWithFiles = giteeService.postReposOwnerRepoCommits(token, forkConfig.getOwner(), giteeRepo, treeRepoCommitsBody);
-            /*if (repoCommitWithFiles != null) {
+            if (repoCommitWithFiles != null) {
                 log.info("文件commit更新成功：" + repoCommitWithFiles.getCommentsUrl());
                 // 创建issue
                 Issue issue = createIssue(token, giteeOwner, prTitle, giteeRepo, pulllRequestConfig.getIssueNum());
                 //提交pr并和issue关联
                 PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(token, giteeOwner, giteeRepo, createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, CommitInfoEnum.PremiumApp.getBranch()));
                 log.info("pr 已提交：" + pullRequest);
-            }*/
+            }
 
         }
 

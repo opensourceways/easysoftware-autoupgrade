@@ -1,6 +1,8 @@
 package com.softwaremarket.autoupgrade.task;
 
+import com.softwaremarket.autoupgrade.config.ApplicationConfig;
 import com.softwaremarket.autoupgrade.dto.ApplicationUpdateInfoDto;
+import com.softwaremarket.autoupgrade.dto.ForkInfoDto;
 import com.softwaremarket.autoupgrade.handler.ApplicationUpdateHandler;
 
 import com.softwaremarket.autoupgrade.helper.EasysoftwareVersionHelper;
@@ -22,11 +24,13 @@ public class ApplicationVersionTask {
 
     private final EasysoftwareVersionHelper easysoftwareVersionHelper;
 
+    private final ApplicationConfig applicationConfig;
 
     // 将当前正在使用的欧拉使用的app镜像升级至最高级别
-    @Scheduled(cron = "${softwareconfig.appkgschedule}")
+    // @Scheduled(cron = "${softwareconfig.appkgschedule}")
     public void premiumAppAutocommit() {
         log.info("开始自动更新数据");
+        easysoftwareVersionHelper.getToken(applicationConfig.getForkInfo());
         // 从软件市场获取全量精品应用
         Set<String> appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
         for (String appName : appNameSet) {
