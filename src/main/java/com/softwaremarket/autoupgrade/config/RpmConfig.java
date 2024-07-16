@@ -1,6 +1,7 @@
 package com.softwaremarket.autoupgrade.config;
 
 import com.softwaremarket.autoupgrade.dto.ForkInfoDto;
+import com.softwaremarket.autoupgrade.dto.MailInfoDto;
 import com.softwaremarket.autoupgrade.dto.PrInfoDto;
 import com.softwaremarket.autoupgrade.dto.RepoInfoDto;
 import lombok.Data;
@@ -14,4 +15,5 @@ public class RpmConfig {
     RepoInfoDto repoInfo;
     ForkInfoDto forkInfo;
     PrInfoDto prInfo;
+    MailInfoDto mailInfo;
 }

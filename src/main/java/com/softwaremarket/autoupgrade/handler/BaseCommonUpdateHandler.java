@@ -8,6 +8,7 @@ import com.softwaremarket.autoupgrade.enums.GiteeRepoEnum;
 import com.softwaremarket.autoupgrade.enums.GiteeUrlEnum;
 import com.softwaremarket.autoupgrade.enums.TreeTypeEnum;
 import com.softwaremarket.autoupgrade.service.IGiteeService;
+import com.softwaremarket.autoupgrade.util.DateTimeStrUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -148,6 +150,31 @@ public class BaseCommonUpdateHandler {
         }
         return treeEntryExpandDtoList;
     }
+
+    //根据openeuler版本、name、前后软化版本判断当前升级是否已经提交过pr
+    protected String getPRinfoByPrTitle(String prTitle, String owner, String repo, String token) {
+        List<JSONObject> v5ReposOwnerRepoPulls = new ArrayList<>();
+        int page = 0;
+        String url = GiteeUrlEnum.GiteeGetV5ReposOwnerRepoPullsUrl.getUrl().replace("{owner}", owner).replace("{repo}", repo).replace("{access_token}", token);
+        do {
+            page++;
+            v5ReposOwnerRepoPulls.addAll(giteeService.getV5ReposOwnerRepoPulls(url.replace("{page}", String.valueOf(page))));
+        } while (v5ReposOwnerRepoPulls.size() == page * 100);
+        if (!CollectionUtils.isEmpty(v5ReposOwnerRepoPulls)) {
+            for (JSONObject v5ReposOwnerRepoPull : v5ReposOwnerRepoPulls) {
+                String title = v5ReposOwnerRepoPull.getString("title");
+                if (!StringUtils.isEmpty(title) &&
+                        title.equals(prTitle)) {
+                    String htmlUrl = v5ReposOwnerRepoPull.getString("html_url");
+                    String createdAt = v5ReposOwnerRepoPull.getString("created_at");
+                    String s = DateTimeStrUtils.parseDateTimeWithOffset(createdAt);
+                    return prTitle + "-于" + s + "创建(" + htmlUrl + ")";
+                }
+            }
+        }
+        return null;
+    }
+
 
     //根据openeuler版本、name、前后软化版本判断当前升级是否已经提交过pr
     protected Boolean checkHasCreatePR(String prTitle, String owner, String repo, String token) {

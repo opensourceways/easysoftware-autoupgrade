@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -60,6 +61,22 @@ public class DateTimeStrUtils {
     }
 
 
+    public static String parseDateTimeWithOffset(String dateTimeWithOffset) {
+        // 解析带有时区信息的日期时间字符串
+        OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateTimeWithOffset);
+
+        // 转换为不带时区信息的 LocalDateTime
+        LocalDateTime localDateTime = offsetDateTime.toLocalDateTime();
+
+        // 定义输出格式
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        // 格式化 LocalDateTime
+        String formattedDateTime = localDateTime.format(formatter);
+
+        return formattedDateTime;
+    }
+
 
     /**
      * 返回未来N+1天的日期
@@ -100,8 +117,6 @@ public class DateTimeStrUtils {
     public static String getTodayDate() {
         return LocalDate.now().format(DateTimeFormatter.ofPattern(DEFAULT_DATE_PATTERN));
     }
-
-
 
 
     /**

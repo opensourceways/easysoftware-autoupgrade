@@ -2,9 +2,12 @@ package com.softwaremarket.autoupgrade;
 
 
 import com.softwaremarket.autoupgrade.config.*;
+import com.softwaremarket.autoupgrade.dto.MailInfoDto;
+import com.softwaremarket.autoupgrade.helper.EasysoftwareVersionHelper;
 import com.softwaremarket.autoupgrade.service.IGiteeService;
 import com.softwaremarket.autoupgrade.task.ApplicationVersionTask;
 import com.softwaremarket.autoupgrade.task.RpmVersionTask;
+import com.softwaremarket.autoupgrade.util.EmailSenderUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -21,6 +24,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import javax.mail.*;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -62,6 +68,8 @@ public class ApplicationTests {
     @Autowired
     ApplicationConfig applicationConfig;
 
+    @Autowired
+    EasysoftwareVersionHelper easysoftwareVersionHelper;
 
     @Before
     public void setupMockMvc() throws Exception {
@@ -74,9 +82,14 @@ public class ApplicationTests {
         nameSet.add("mlflow");
         System.out.println(applicationConfig);
         upstreamVersionTask.premiumAppAutocommit();*/
+        // iGiteeService.getTokenByPassword(applicationConfig.getForkInfo());
+        Set<String> appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
+        System.out.println(EmailSenderUtil.applicationMailMap);
+       /* MailInfoDto mailInfo = applicationConfig.getMailInfo();
 
-        iGiteeService.getTokenByPassword(applicationConfig.getForkInfo());
 
+        EmailSenderUtil.sendEmailByQQ(mailInfo.getHost(), mailInfo.getSenderUsername(), mailInfo.getSenderPassword(), mailInfo.getFrom(), "", "测试", "是个测试");
+*/
     }
 
 

@@ -6,6 +6,7 @@ import com.softwaremarket.autoupgrade.dto.ForkInfoDto;
 import com.softwaremarket.autoupgrade.handler.ApplicationUpdateHandler;
 
 import com.softwaremarket.autoupgrade.helper.EasysoftwareVersionHelper;
+import com.softwaremarket.autoupgrade.util.EmailSenderUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -46,6 +47,8 @@ public class ApplicationVersionTask {
                 log.error(e.getMessage());
             }
         }
+
+        EmailSenderUtil.sendApplicationEmail(applicationConfig.getMailInfo());
 
     }
 

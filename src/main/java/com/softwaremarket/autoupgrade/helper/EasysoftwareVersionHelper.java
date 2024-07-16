@@ -7,6 +7,7 @@ import com.softwaremarket.autoupgrade.config.CollectConfig;
 import com.softwaremarket.autoupgrade.dto.ApplicationUpdateInfoDto;
 import com.softwaremarket.autoupgrade.dto.ForkInfoDto;
 import com.softwaremarket.autoupgrade.service.IGiteeService;
+import com.softwaremarket.autoupgrade.util.EmailSenderUtil;
 import com.softwaremarket.autoupgrade.util.HttpRequestUtil;
 import com.softwaremarket.autoupgrade.util.JacksonUtils;
 import lombok.RequiredArgsConstructor;
@@ -69,7 +70,6 @@ public class EasysoftwareVersionHelper {
             String result = HttpRequestUtil.sendGet(apppkgInfoUrl, paramMap);
             if (result != null) {
                 JSONObject resultObj = JacksonUtils.toObject(JSONObject.class, result);
-                System.out.println(resultObj);
                 JSONObject data = resultObj.getJSONObject("data");
                 list = data.getJSONArray("list");
                 if (!CollectionUtils.isEmpty(list)) {
@@ -77,6 +77,9 @@ public class EasysoftwareVersionHelper {
                         JSONObject app = new JSONObject((Map) a);
                         //grafana  prometheus
                         appNameSet.add(String.valueOf(app.get("name")).toLowerCase(Locale.ROOT));
+
+                        String pkgId = app.getString("pkgId");
+                        setAppkgMail(app.getString("name").toLowerCase(Locale.ROOT), pkgId);
                     });
                     if (list.size() == 50)
                         currentPage++;
@@ -86,6 +89,21 @@ public class EasysoftwareVersionHelper {
         return appNameSet;
     }
 
+
+    public void setAppkgMail(String name, String pkgId) {
+        String detailUrl = collectConfig.getApppkgDetailUrl();
+        HashMap<String, Object> paramMap = new HashMap<>();
+        paramMap.put("pkgId", pkgId);
+        String result = HttpRequestUtil.sendGet(detailUrl, paramMap);
+        if (result != null) {
+            JSONObject resultObj = JacksonUtils.toObject(JSONObject.class, result);
+            JSONObject data = resultObj.getJSONObject("data");
+
+            JSONArray list = data.getJSONArray("list");
+            Map detail = (Map) list.get(0);
+            EmailSenderUtil.applicationMailMap.put(name, String.valueOf(detail.get("maintainerEmail")));
+        }
+    }
 
     public String getOpeneulerLatestOsVersion() {
         String openEulerOsVersionInfoUrl = collectConfig.getOpenEulerOsVersionInfoUrl();

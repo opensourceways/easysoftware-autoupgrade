@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 //采集版本信息配置
 public class CollectConfig {
     String apppkgInfoUrl;
+    String apppkgDetailUrl;
     String projectsInfoUrl;
     String versionsInfoUrl;
     String openEulerOsVersionInfoUrl;

@@ -11,6 +11,7 @@ import com.softwaremarket.autoupgrade.enums.CommitInfoEnum;
 import com.softwaremarket.autoupgrade.enums.GiteeRepoEnum;
 import com.softwaremarket.autoupgrade.service.IGiteeService;
 import com.softwaremarket.autoupgrade.util.DateTimeStrUtils;
+import com.softwaremarket.autoupgrade.util.EmailSenderUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -165,6 +166,8 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
                 PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(token, giteeOwner, giteeRepo, createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, CommitInfoEnum.PremiumApp.getBranch()));
                 log.info("pr 已提交：" + pullRequest);
             }
+
+            EmailSenderUtil.applicationSednMailMap.add(EmailSenderUtil.applicationMailMap.get(name), getPRinfoByPrTitle(prTitle, giteeOwner, giteeRepo, token));
 
         }
 
