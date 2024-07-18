@@ -1,7 +1,7 @@
 collectconfig:
-  sotfwareInfoUrl:
   apppkgInfoUrl:
   projectsInfoUrl:
+  apppkgDetailUrl:
   openEulerOsVersionInfoUrl:
   dockerHubOpeneulerOsVersionInfoUrl:
   dockerHubOpeneulerHomepage:
@@ -35,7 +35,11 @@ softcenter:
     prInfo:
       prTitle:
       issueNum:
-
+    mailInfo:
+      host:
+      from:
+      senderUsername:
+      senderPassword:
   rpm:
     repoInfo:
       owner:

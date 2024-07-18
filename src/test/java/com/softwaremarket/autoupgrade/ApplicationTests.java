@@ -81,15 +81,14 @@ public class ApplicationTests {
        /* HashSet<String> nameSet = new HashSet<>();
         nameSet.add("mlflow");
         System.out.println(applicationConfig);
-        upstreamVersionTask.premiumAppAutocommit();*/
+        upstreamVersionTask.premiumAppAutocommit();
         // iGiteeService.getTokenByPassword(applicationConfig.getForkInfo());
         Set<String> appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
-        System.out.println(EmailSenderUtil.applicationMailMap);
-       /* MailInfoDto mailInfo = applicationConfig.getMailInfo();
+        System.out.println(EmailSenderUtil.applicationMailMap);*/
+        MailInfoDto mailInfo = applicationConfig.getMailInfo();
 
 
-        EmailSenderUtil.sendEmailByQQ(mailInfo.getHost(), mailInfo.getSenderUsername(), mailInfo.getSenderPassword(), mailInfo.getFrom(), "", "测试", "是个测试");
-*/
+        EmailSenderUtil.sendEmailByQQ(mailInfo.getHost(), mailInfo.getSenderUsername(), mailInfo.getSenderPassword(), mailInfo.getFrom(), "980488905@qq.com", "测试", "是个测试");
     }
 
 

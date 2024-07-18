@@ -72,7 +72,7 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
         // 需要更新的软件 name
         String name = premiumAppUpdateInfo.getAppName();
 
-        String prTitle = String.format(pulllRequestConfig.getPrTitle(), name, (communityOtherOsVersion == null ? communityOsVersion : communityOtherOsVersion), name + upAppLatestVersion);
+        String prTitle = String.format(pulllRequestConfig.getPrTitle(), name, (communityOtherOsVersion == null ? communityOsVersion : communityOtherOsVersion), name +" " +upAppLatestVersion);
         String giteeOwner = GiteeRepoEnum.PREMIUMAPP.getOwner();
         String giteeRepo = GiteeRepoEnum.PREMIUMAPP.getRepo();
         String token = forkConfig.getAccessToken();
@@ -177,9 +177,17 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
     private void handleTreeRepoCommitsBody(String branch, RepoCommitsBody treeRepoCommitsBody, String currentVersion, String latestVersion, String currentOsversion, String latestOsVersion) {
         treeRepoCommitsBody.setBranch(branch);
         List<GitAction> actions = treeRepoCommitsBody.getActions();
+        String dockfilepath = "";
+        GitAction metaGitAction = null;
         for (int i = 0; i < actions.size(); i++) {
             GitAction gitAction = actions.get(i);
             String path = gitAction.getPath();
+            if (path.endsWith("meta.yml")) {
+                metaGitAction = gitAction;
+                actions.remove(i);
+                i--;
+                continue;
+            }
             String longCurrentOsVersion = "";
             //更新文件路径
             String replacePath = path.replace(currentVersion, latestVersion);
@@ -218,11 +226,21 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
                 if (latestOsVersion != null) {
                     content = content.replace(longCurrentOsVersion, latestOsVersion);
                 }
+                dockfilepath = gitAction.getPath();
                 gitAction.setContent(content);
             }
 
 
         }
+        //update meta.yml
+        if (metaGitAction != null) {
+            metaGitAction.setAction(GitAction.ActionEnum.UPDATE);
+            StringBuilder content = new StringBuilder(metaGitAction.getContent());
+            content.append("\n").append(latestVersion).append("-").append(currentOsversion).append(":").append("\n").append("  path: ").append(dockfilepath);
+            metaGitAction.setContent(content.toString());
+            actions.add(metaGitAction);
+        }
+
     }
 
 }
