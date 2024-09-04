@@ -125,7 +125,7 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
                 //删除下载的文件
                 FileUtils.forceDelete(file);
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
             }
         }
         return repoCommitsBody;

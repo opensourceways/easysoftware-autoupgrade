@@ -10,6 +10,7 @@ import com.softwaremarket.autoupgrade.enums.TreeTypeEnum;
 import com.softwaremarket.autoupgrade.service.IGiteeService;
 import com.softwaremarket.autoupgrade.util.DateTimeStrUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -25,12 +26,17 @@ import java.util.HashMap;
 import java.util.List;
 
 @Component
-
+@Slf4j
 public class BaseCommonUpdateHandler {
     @Autowired
     protected IGiteeService giteeService;
 
     ForkInfoDto forkConfig;
+
+
+    protected Boolean deleteRepo(String accessToken, String owner, String repo) {
+        return Boolean.TRUE;
+    }
 
     // 判断精品仓库是否存在有当前版本镜像
     protected Boolean checkHasExsitedVersion(String sha, String osVersion, String appVersion) {
@@ -67,7 +73,6 @@ public class BaseCommonUpdateHandler {
             ownerIssuesBody.setTitle(title);
             ownerIssuesBody.setRepo(repo);
             issue = giteeService.createIssue(token, owner, ownerIssuesBody);
-            System.out.println(issue);
             if (issue != null) {
                 return issue;
             }
@@ -114,7 +119,7 @@ public class BaseCommonUpdateHandler {
                     //删除下载的文件
                     FileUtils.forceDelete(treeEntryExpandDto.getFile());
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.error(e.getMessage());
                 }
             }
         }
@@ -136,14 +141,10 @@ public class BaseCommonUpdateHandler {
             treeEntryExpandDtoList.add(treeEntryExpandDto);
             String newPath = path + "/" + treeEntry.getPath();
             if (TreeTypeEnum.BLOB.getType().equals(type)) {
-                System.out.println("path:" + newPath);
                 File file = giteeService.getReposOwnerRepoRawPath(forkConfig.getAccessToken(), forkConfig.getOwner(), rep, newPath, null);
                 treeEntryExpandDto.setFile(file);
-
-                System.out.println("file:" + file.getPath());
                 treeEntryExpandDto.setPath(newPath);
             } else if (TreeTypeEnum.TREE.getType().equals(type)) {
-                System.out.println(newPath);
                 treeEntryExpandDto.setNext(getTreeBlob(newPath, rep, treeEntry.getSha()));
             }
 

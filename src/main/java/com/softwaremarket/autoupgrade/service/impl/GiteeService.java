@@ -73,7 +73,7 @@ public class GiteeService implements IGiteeService {
             log.info(result + "");
         } catch (Exception e) {
             log.error("Exception when calling PullRequestsApi#postReposOwnerRepoPulls");
-            e.printStackTrace();
+            log.info(e.getMessage());
         }
         return result;
     }
@@ -88,7 +88,7 @@ public class GiteeService implements IGiteeService {
             log.info(result + "");
         } catch (Exception e) {
             log.error("Exception when calling IssuesApi#postReposOwnerIssues");
-            e.printStackTrace();
+            log.info(e.getMessage());
         }
         return result;
     }
@@ -113,7 +113,7 @@ public class GiteeService implements IGiteeService {
                 return JacksonUtils.toObjectList(JSONObject.class, result);
             }
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            log.info(e.getMessage());
         }
 
         return null;
@@ -134,7 +134,7 @@ public class GiteeService implements IGiteeService {
             result = apiInstance.getReposOwnerRepoGitTreesSha(owner, repo, sha, recursive);
         } catch (Exception e) {
             log.error("Exception when calling GitDataApi#getReposOwnerRepoGitTreesSha");
-            e.printStackTrace();
+            log.info(e.getMessage());
         }
         return result;
     }
@@ -150,7 +150,7 @@ public class GiteeService implements IGiteeService {
             log.info(result + "");
         } catch (Exception e) {
             log.error("Exception when calling RepositoriesApi#getReposOwnerRepoRawPath");
-            e.printStackTrace();
+            log.info(e.getMessage());
         }
         return result;
     }
@@ -169,7 +169,7 @@ public class GiteeService implements IGiteeService {
             log.info(result + "");
         } catch (Exception e) {
             log.error("Exception when calling RepositoriesApi#postReposOwnerRepoCommits");
-            e.printStackTrace();
+            log.info(e.getMessage());
         }
         return result;
     }
@@ -186,7 +186,7 @@ public class GiteeService implements IGiteeService {
             log.info(result + "");
         } catch (Exception e) {
             log.error("Exception when calling PullRequestsApi#postReposOwnerRepoPulls");
-            e.printStackTrace();
+            log.info(e.getMessage());
         }
         return null;
     }
@@ -202,7 +202,7 @@ public class GiteeService implements IGiteeService {
             log.info(result + "");
         } catch (Exception e) {
             log.error("Exception when calling RepositoriesApi#postReposOwnerRepoBranches");
-            e.printStackTrace();
+            log.info(e.getMessage());
         }
         return result;
     }
@@ -274,7 +274,7 @@ public class GiteeService implements IGiteeService {
                 log.error("Error: Unexpected response code: " + response);
             }
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            log.info(e.getMessage());
         }
         return null;
     }

@@ -58,7 +58,7 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
                 premiumAppUpdateInfo.setCommunityOtherOsVersion(osversion);
                 handlePremiumApp(premiumAppUpdateInfo);
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
             }
         }
     }
@@ -137,7 +137,7 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
             //线程休眠 gitee有延迟
             TimeUnit.SECONDS.sleep(5);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
 
         contents = giteeService.getContents(forkConfig.getOwner(), giteeRepo, "/", forkConfig.getAccessToken(), handleBranch);
