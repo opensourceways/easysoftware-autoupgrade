@@ -8,6 +8,8 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 @Configuration
 @ConfigurationProperties(prefix = "softcenter.application")
 @Data
@@ -17,4 +19,6 @@ public class ApplicationConfig {
     ForkInfoDto forkInfo;
     PrInfoDto prInfo;
     MailInfoDto mailInfo;
+    //需要补全的欧拉版本
+    List<String> eulerversion;
 }

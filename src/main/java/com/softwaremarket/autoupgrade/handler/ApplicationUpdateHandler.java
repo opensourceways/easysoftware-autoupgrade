@@ -72,7 +72,7 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
         // 需要更新的软件 name
         String name = premiumAppUpdateInfo.getAppName();
 
-        String prTitle = String.format(pulllRequestConfig.getPrTitle(), name, (communityOtherOsVersion == null ? communityOsVersion : communityOtherOsVersion), name +" " +upAppLatestVersion);
+        String prTitle = String.format(pulllRequestConfig.getPrTitle(), name, (communityOtherOsVersion == null ? communityOsVersion : communityOtherOsVersion), name + " " + upAppLatestVersion);
         String giteeOwner = GiteeRepoEnum.PREMIUMAPP.getOwner();
         String giteeRepo = GiteeRepoEnum.PREMIUMAPP.getRepo();
         String token = forkConfig.getAccessToken();
@@ -94,7 +94,7 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
                 //线程休眠 fork仓库有延迟
                 TimeUnit.SECONDS.sleep(5);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
             }
             contents = giteeService.getContents(forkConfig.getOwner(), giteeRepo, "/", token, CommitInfoEnum.PremiumApp.getBranch());
             if (CollectionUtils.isEmpty(forkedObj) || CollectionUtils.isEmpty(contents)) {

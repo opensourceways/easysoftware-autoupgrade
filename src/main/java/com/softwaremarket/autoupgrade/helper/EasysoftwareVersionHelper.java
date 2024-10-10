@@ -40,7 +40,7 @@ public class EasysoftwareVersionHelper {
             for (Object item : items) {
                 JSONObject o = new JSONObject((Map) item);
                 if ("app_up".equals(o.getString("tag"))) {
-                    premiumAppUpdateInfoDto.setUpAppLatestVersion(o.getString("version"));
+                    premiumAppUpdateInfoDto.setUpAppLatestVersion(o.getString("version").replace("_", "."));
                 }
                 if ("app_openeuler".equals(o.getString("tag"))) {
                     String version = o.getString("version");

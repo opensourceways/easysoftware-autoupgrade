@@ -143,7 +143,7 @@ public class HttpRequestUtil {
      * @throws
      * @Title: sendGet
      */
-    public static String sendGet(String url, Map<String, Object> params, String encoding) {
+    public static String sendGet(String url, Map<String, Object> params, String encoding, Map<String, Object> headers) {
         //log.info("进入get请求方法...");
         //log.info("请求入参：URL= " + url);
         //log.info("请求入参：params=" + JacksonUtils.writeValueAsString(params));
@@ -160,6 +160,11 @@ public class HttpRequestUtil {
             if (params != null) {
                 for (Map.Entry<String, Object> param : params.entrySet()) {
                     builder.addParameter(param.getKey(), param.getValue().toString());
+                }
+            }
+            if (headers != null) {
+                for (Map.Entry<String, Object> header : headers.entrySet()) {
+                    httpGet.addHeader(header.getKey(), header.getValue().toString());
                 }
             }
             URI uri = builder.build();
@@ -192,7 +197,7 @@ public class HttpRequestUtil {
      * @Title: sendGet
      */
     public static String sendGet(String url, Map<String, Object> params) {
-        return sendGet(url, params, ENCODING);
+        return sendGet(url, params, ENCODING, getRandomIpHeader());
     }
 
     /**
@@ -202,6 +207,19 @@ public class HttpRequestUtil {
      * @Title: sendGet
      */
     public static String sendGet(String url) {
-        return sendGet(url, null, ENCODING);
+        return sendGet(url, null, ENCODING, getRandomIpHeader());
+    }
+
+    public static Map<String, Object> getRandomIpHeader() {
+        Random random = new Random(System.currentTimeMillis());
+        String ip = (random.nextInt(255) + 1) + "." + (random.nextInt(255) + 1) + "." + (random.nextInt(255) + 1) + "."
+                + (random.nextInt(255) + 1);
+        HashMap<String, Object> header = new HashMap<>();
+        header.put("X-Forwarded-For", ip);
+        header.put("x-forwarded-for", ip);
+        header.put("HTTP_X_FORWARDED_FOR", ip);
+        header.put("HTTP_CLIENT_IP", ip);
+        header.put("REMOTE_ADDR", ip);
+        return header;
     }
 }

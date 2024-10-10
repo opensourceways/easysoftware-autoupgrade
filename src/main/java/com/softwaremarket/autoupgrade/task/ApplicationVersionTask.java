@@ -2,7 +2,6 @@ package com.softwaremarket.autoupgrade.task;
 
 import com.softwaremarket.autoupgrade.config.ApplicationConfig;
 import com.softwaremarket.autoupgrade.dto.ApplicationUpdateInfoDto;
-import com.softwaremarket.autoupgrade.dto.ForkInfoDto;
 import com.softwaremarket.autoupgrade.handler.ApplicationUpdateHandler;
 
 import com.softwaremarket.autoupgrade.helper.EasysoftwareVersionHelper;
@@ -10,7 +9,6 @@ import com.softwaremarket.autoupgrade.util.EmailSenderUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -26,6 +24,7 @@ public class ApplicationVersionTask {
     private final EasysoftwareVersionHelper easysoftwareVersionHelper;
 
     private final ApplicationConfig applicationConfig;
+
 
     // 将当前正在使用的欧拉使用的app镜像升级至最高级别
     // @Scheduled(cron = "${softwareconfig.appkgschedule}")
@@ -55,7 +54,8 @@ public class ApplicationVersionTask {
     // 补全所有欧拉版本的最新app镜像
     //@Scheduled(cron = "${softwareconfig.appkgschedule}")
     public void premiumAppAllOsVersionUpdate() {
-        List<String> dockerHubOpeneulerOsVersion = easysoftwareVersionHelper.getDockerHubOpeneulerOsVersion();
+        easysoftwareVersionHelper.getToken(applicationConfig.getForkInfo());
+        List<String> dockerHubOpeneulerOsVersion = applicationConfig.getEulerversion(); //easysoftwareVersionHelper.getDockerHubOpeneulerOsVersion();
         log.info("开始自动更新数据精品应用openeuler所有系统数据");
         Set<String> appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
         for (String appName : appNameSet) {
@@ -69,7 +69,6 @@ public class ApplicationVersionTask {
                 }
             } catch (Exception e) {
                 log.error(e.getMessage());
-                e.printStackTrace();
             }
         }
 

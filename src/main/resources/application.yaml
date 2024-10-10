@@ -18,6 +18,8 @@ softwareconfig:
 
 softcenter:
   application:
+    eulerversion:
+
     repoInfo:
       owner:
       repo:
