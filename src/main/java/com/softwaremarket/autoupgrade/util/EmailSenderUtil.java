@@ -93,7 +93,7 @@ public class EmailSenderUtil {
             // 发送邮件
             Transport.send(message);
             log.info("Sent message successfully....");
-        } catch (MessagingException mex) {
+        } catch (Exception mex) {
             log.error(mex.getMessage());
         }
         log.info("Email sent successfully!");
