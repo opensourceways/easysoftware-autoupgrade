@@ -1,6 +1,7 @@
 package com.softwaremarket.autoupgrade.util;
 
 import com.softwaremarket.autoupgrade.dto.MailInfoDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.LinkedMultiValueMap;
 
 import javax.mail.*;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+@Slf4j
 public class EmailSenderUtil {
 
 
@@ -90,11 +92,11 @@ public class EmailSenderUtil {
 
             // 发送邮件
             Transport.send(message);
-            System.out.println("Sent message successfully....");
+            log.info("Sent message successfully....");
         } catch (MessagingException mex) {
-            mex.printStackTrace();
+            log.error(mex.getMessage());
         }
-        System.out.println("Email sent successfully!");
+        log.info("Email sent successfully!");
 
     }
 

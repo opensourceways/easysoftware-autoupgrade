@@ -80,6 +80,11 @@ public class EasysoftwareVersionHelper {
 
                         String pkgId = app.getString("pkgId");
                         setAppkgMail(app.getString("name").toLowerCase(Locale.ROOT), pkgId);
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            log.error(e.getMessage());
+                        }
                     });
                     if (list.size() == 50)
                         currentPage++;
