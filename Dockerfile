@@ -58,8 +58,8 @@ RUN passwd -l easysoftware \
 RUN dnf install -y wget \
     && wget https://mirrors.tuna.tsinghua.edu.cn/Adoptium/17/jre/x64/linux/OpenJDK17U-jre_x64_linux_hotspot_17.0.12_7.tar.gz \
     && tar -zxvf OpenJDK17U-jre_x64_linux_hotspot_17.0.12_7.tar.gz \
-    && rm -rf OpenJDK17U-jre_x64_linux_hotspot_17.0.12_7.tar.gz
-
+    && rm -rf OpenJDK17U-jre_x64_linux_hotspot_17.0.12_7.tar.gz \
+    && chown -R easysoftware:easysoftware jdk-17.0.12+7-jre
 RUN rm -rf `find / -iname "*tcpdump*"` \
     && rm -rf `find / -iname "*sniffer*"` \
     && rm -rf `find / -iname "*wireshark*"` \
