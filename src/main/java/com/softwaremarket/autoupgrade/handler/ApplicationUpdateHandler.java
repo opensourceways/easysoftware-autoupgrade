@@ -45,18 +45,24 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
     }
 
     public void batchUpdatePremiumApp(List<String> allOsVersionList, ApplicationUpdateInfoDto premiumAppUpdateInfo) {
-        for (String osversion : allOsVersionList) {
+
+        for (int i = 0; i < allOsVersionList.size(); i++) {
+            String osversion = allOsVersionList.get(i);
             try {
                 String versionNewFormat = osversion + "";
                 if (versionNewFormat.contains("-sp")) {
                     versionNewFormat = versionNewFormat.replace("lts", "");
                 }
                 versionNewFormat = "oe" + versionNewFormat.replace(".", "").replace("-", "");
-                if (versionNewFormat.equals(premiumAppUpdateInfo.getCommunityCurrentOsVersion())) {
+                if (versionNewFormat.equals(premiumAppUpdateInfo.getCommunityCurrentOsVersion()) && premiumAppUpdateInfo.checkAppVersion()) {
                     continue;
                 }
                 premiumAppUpdateInfo.setCommunityOtherOsVersion(osversion);
-                handlePremiumApp(premiumAppUpdateInfo);
+                Boolean submitPr = Boolean.FALSE;
+                if (i == allOsVersionList.size() - 1) {
+                    submitPr = Boolean.TRUE;
+                }
+                handlePremiumApp(premiumAppUpdateInfo, submitPr);
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
@@ -64,7 +70,7 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
     }
 
 
-    public void handlePremiumApp(ApplicationUpdateInfoDto premiumAppUpdateInfo) {
+    public void handlePremiumApp(ApplicationUpdateInfoDto premiumAppUpdateInfo, Boolean submitPr) {
         String oeAppLatestVersion = premiumAppUpdateInfo.getOeAppLatestVersion();
         String upAppLatestVersion = premiumAppUpdateInfo.getUpAppLatestVersion();
         String communityOsVersion = premiumAppUpdateInfo.getCommunityCurrentOsVersion();
@@ -72,12 +78,12 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
         // 需要更新的软件 name
         String name = premiumAppUpdateInfo.getAppName();
 
-        String prTitle = String.format(pulllRequestConfig.getPrTitle(), name, (communityOtherOsVersion == null ? communityOsVersion : communityOtherOsVersion), name + " " + upAppLatestVersion);
+        String prTitle = String.format(pulllRequestConfig.getPrTitle(), name, upAppLatestVersion);
         String giteeOwner = GiteeRepoEnum.PREMIUMAPP.getOwner();
         String giteeRepo = GiteeRepoEnum.PREMIUMAPP.getRepo();
         String token = forkConfig.getAccessToken();
-        // 版本相同或者已经提交过相同pr将不再处理
-        if (upAppLatestVersion.equals(oeAppLatestVersion) || checkHasCreatePR(prTitle, giteeOwner, giteeRepo, token))
+        // 已经提交过相同pr将不再处理
+        if (checkHasCreatePR(prTitle, giteeOwner, giteeRepo, token))
             return;
 
 
@@ -85,7 +91,7 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
         List<JSONObject> contents = giteeService.getContents(forkConfig.getOwner(), giteeRepo, "/", token, CommitInfoEnum.PremiumApp.getBranch());
 
         //代码提交、pr的源分支
-        String handleBranch = name + "-" + (communityOtherOsVersion == null ? communityOsVersion : communityOtherOsVersion) + "软件市场自动升级" + DateTimeStrUtils.getTodayDate();
+        String handleBranch = name + "-" + "软件市场自动升级" + DateTimeStrUtils.getTodayDate();
 
         if (CollectionUtils.isEmpty(contents)) {
             // fork仓库作为中间操作仓库
@@ -149,25 +155,36 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
             }).collect(Collectors.toList());
             JSONObject object = contents.get(0);
             //获取文件树
-            List<TreeEntryExpandDto> treeBlob = getTreeBlob(object.getString("name"), giteeRepo, object.getString("sha"));
+            List<TreeEntryExpandDto> treeBlob = getTreeBlob(object.getString("name"), giteeRepo, object.getString("sha"), handleBranch);
+            String addVersion = communityOtherOsVersion == null ? communityOsVersion.toLowerCase(Locale.ROOT) : communityOtherOsVersion.toLowerCase(Locale.ROOT);
+            String commitInfo = String.format(CommitInfoEnum.PremiumApp.getMessage(), addVersion, name, upAppLatestVersion);
             //获取committbody
-            RepoCommitsBody treeRepoCommitsBody = getTreeRepoCommitsBody(String.format(CommitInfoEnum.PremiumApp.getMessage(), communityOtherOsVersion == null ? communityOsVersion.toLowerCase(Locale.ROOT) : communityOtherOsVersion.toLowerCase(Locale.ROOT), name, upAppLatestVersion), CommitInfoEnum.PremiumApp.getBranch());
+            RepoCommitsBody treeRepoCommitsBody = getTreeRepoCommitsBody(commitInfo, CommitInfoEnum.PremiumApp.getBranch());
             //对每一个文件提交信息出理
             getGitActions(treeRepoCommitsBody.getActions(), treeBlob);
             //对commit信息处理
             handleTreeRepoCommitsBody(handleBranch, treeRepoCommitsBody, oeAppLatestVersion, upAppLatestVersion, communityOsVersion, communityOtherOsVersion);
             //提交commit
             RepoCommitWithFiles repoCommitWithFiles = giteeService.postReposOwnerRepoCommits(token, forkConfig.getOwner(), giteeRepo, treeRepoCommitsBody);
+            log.info("文件commit更新成功：" + repoCommitWithFiles.getCommentsUrl());
             if (repoCommitWithFiles != null) {
-                log.info("文件commit更新成功：" + repoCommitWithFiles.getCommentsUrl());
+                StringBuilder prBody = premiumAppUpdateInfo.getPrBody();
+                if (prBody.isEmpty()) {
+                    prBody.append("| Application version | openEuler version |").append("\n").
+                            append("|----------|-------------|").append("\n");
+                }
+                prBody.append("| ").append(upAppLatestVersion).append(" | ").append(addVersion).append(" |").append("\n");
+                System.out.println(prBody);
+            }
+            if (submitPr) {
                 // 创建issue
                 Issue issue = createIssue(token, giteeOwner, prTitle, giteeRepo, pulllRequestConfig.getIssueNum());
                 //提交pr并和issue关联
-                PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(token, giteeOwner, giteeRepo, createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, CommitInfoEnum.PremiumApp.getBranch()));
+                PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(token, giteeOwner, giteeRepo,
+                        createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, CommitInfoEnum.PremiumApp.getBranch(), premiumAppUpdateInfo.getPrBody().toString()));
                 log.info("pr 已提交：" + pullRequest);
+                EmailSenderUtil.applicationSednMailMap.add(applicationConfig.getMailInfo().getApplicationDefaultReveiver(), getPRinfoByPrTitle(prTitle, giteeOwner, giteeRepo, token));
             }
-
-            EmailSenderUtil.applicationSednMailMap.add(EmailSenderUtil.applicationMailMap.get(name), getPRinfoByPrTitle(prTitle, giteeOwner, giteeRepo, token));
 
         }
 
@@ -236,7 +253,20 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
         if (metaGitAction != null) {
             metaGitAction.setAction(GitAction.ActionEnum.UPDATE);
             StringBuilder content = new StringBuilder(metaGitAction.getContent());
-            content.append("\n").append(latestVersion).append("-").append(currentOsversion).append(":").append("\n").append("  path: ").append(dockfilepath);
+            String metadockfilepath = dockfilepath;
+            if (metadockfilepath.startsWith("/")) {
+                metadockfilepath = metadockfilepath.replaceFirst("/", "");
+            }
+            String metaVersion = latestOsVersion == null ? currentOsversion : latestOsVersion;
+            metaVersion = metaVersion.replace(".", "");
+            metaVersion = metaVersion.replace("-", "");
+            if (metaVersion.contains("sp")) {
+                metaVersion = metaVersion.replace("lts", "");
+            }
+            if (!metaVersion.startsWith("oe")) {
+                metaVersion = "oe" + metaVersion;
+            }
+            content.append("\n").append(latestVersion).append("-").append(metaVersion).append(":").append("\n").append("  path: ").append(metadockfilepath);
             metaGitAction.setContent(content.toString());
             actions.add(metaGitAction);
         }

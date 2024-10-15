@@ -127,7 +127,7 @@ public class BaseCommonUpdateHandler {
     }
 
     // 获取文件树
-    protected List<TreeEntryExpandDto> getTreeBlob(String path, String rep, String sha) {
+    protected List<TreeEntryExpandDto> getTreeBlob(String path, String rep, String sha, String ref) {
         List<TreeEntryExpandDto> treeEntryExpandDtoList = new ArrayList<>();
         Tree reposOwnerRepoGitTreesSha = giteeService.getReposOwnerRepoGitTreesSha(forkConfig.getAccessToken(), forkConfig.getOwner(), rep, sha, 56);
         List<TreeEntry> treesSha = reposOwnerRepoGitTreesSha.getTree();
@@ -141,11 +141,11 @@ public class BaseCommonUpdateHandler {
             treeEntryExpandDtoList.add(treeEntryExpandDto);
             String newPath = path + "/" + treeEntry.getPath();
             if (TreeTypeEnum.BLOB.getType().equals(type)) {
-                File file = giteeService.getReposOwnerRepoRawPath(forkConfig.getAccessToken(), forkConfig.getOwner(), rep, newPath, null);
+                File file = giteeService.getReposOwnerRepoRawPath(forkConfig.getAccessToken(), forkConfig.getOwner(), rep, newPath, ref);
                 treeEntryExpandDto.setFile(file);
                 treeEntryExpandDto.setPath(newPath);
             } else if (TreeTypeEnum.TREE.getType().equals(type)) {
-                treeEntryExpandDto.setNext(getTreeBlob(newPath, rep, treeEntry.getSha()));
+                treeEntryExpandDto.setNext(getTreeBlob(newPath, rep, treeEntry.getSha(), ref));
             }
 
         }
@@ -211,7 +211,7 @@ public class BaseCommonUpdateHandler {
     }
 
 
-    protected RepoPullsBody createRepoPullsBody(Issue issue, String headBranch, String baseBranch) {
+    protected RepoPullsBody createRepoPullsBody(Issue issue, String headBranch, String baseBranch, String prBody) {
         RepoPullsBody body = new RepoPullsBody();
         //会根据issue的title和body去填充pr的
         body.setTitle(issue.getTitle());
@@ -219,7 +219,9 @@ public class BaseCommonUpdateHandler {
         body.setHead(headBranch);
         body.setBase(baseBranch);
         //将pr和issue关联
-        body.setBody("#" + issue.getNumber());
+
+
+        body.setBody("#" + issue.getNumber() +"\n"+ prBody);
         //合并pr后删除源分支
         /* body.pruneSourceBranch(Boolean.TRUE);*/
 

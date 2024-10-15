@@ -12,4 +12,6 @@ public class MailInfoDto {
     String senderUsername;
     //发送者授权码
     String senderPassword;
+    // 容器镜像邮件默认接收者
+    String applicationDefaultReveiver;
 }

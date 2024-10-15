@@ -40,7 +40,7 @@ public class ApplicationVersionTask {
                 easysoftwareVersionHelper.initUpdateInfo(appName, premiumAppUpdateInfoDto);
                 if (premiumAppUpdateInfoDto.checkInfoIsComplete() && !premiumAppUpdateInfoDto.getOeAppLatestVersion().equals(premiumAppUpdateInfoDto.getUpAppLatestVersion())) {
                     log.info("精品应用{}当前欧拉版本：{},镜像版本：{},上游最新版本：{},触发自动更新！", appName, premiumAppUpdateInfoDto.getCommunityCurrentOsVersion(), premiumAppUpdateInfoDto.getOeAppLatestVersion(), premiumAppUpdateInfoDto.getUpAppLatestVersion());
-                    applicationUpdateHandler.handlePremiumApp(premiumAppUpdateInfoDto);
+                    applicationUpdateHandler.handlePremiumApp(premiumAppUpdateInfoDto, Boolean.TRUE);
                 }
             } catch (Exception e) {
                 log.error(e.getMessage());
@@ -56,7 +56,7 @@ public class ApplicationVersionTask {
     public void premiumAppAllOsVersionUpdate() {
         easysoftwareVersionHelper.getToken(applicationConfig.getForkInfo());
         List<String> dockerHubOpeneulerOsVersion = applicationConfig.getEulerversion(); //easysoftwareVersionHelper.getDockerHubOpeneulerOsVersion();
-        log.info("开始自动更新数据精品应用openeuler所有系统数据");
+        log.info("！开始自动更新数据精品应用openeuler所有系统数据");
         Set<String> appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
         for (String appName : appNameSet) {
             try {
@@ -64,13 +64,14 @@ public class ApplicationVersionTask {
                 //从软件市场获取精品应用上下游版本
                 easysoftwareVersionHelper.initUpdateInfo(appName, premiumAppUpdateInfoDto);
                 if (premiumAppUpdateInfoDto.checkInfoIsComplete()) {
-                    log.info("精品应用{}当前欧拉版本：{},镜像版本：{},上游最新版本：{},触发自动更新！", appName, premiumAppUpdateInfoDto.getCommunityCurrentOsVersion(), premiumAppUpdateInfoDto.getOeAppLatestVersion(), premiumAppUpdateInfoDto.getUpAppLatestVersion());
+                    log.info("批量精品应用{}当前欧拉版本：{},镜像版本：{},上游最新版本：{},触发自动更新！", appName, premiumAppUpdateInfoDto.getCommunityCurrentOsVersion(), premiumAppUpdateInfoDto.getOeAppLatestVersion(), premiumAppUpdateInfoDto.getUpAppLatestVersion());
                     applicationUpdateHandler.batchUpdatePremiumApp(dockerHubOpeneulerOsVersion, premiumAppUpdateInfoDto);
                 }
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
         }
+        EmailSenderUtil.sendApplicationEmail(applicationConfig.getMailInfo());
 
     }
 
@@ -89,7 +90,7 @@ public class ApplicationVersionTask {
                 if (!premiumAppUpdateInfoDto.checkInfoIsComplete() || currentOsVersionLatest(openeulerLatestOsVersion, premiumAppUpdateInfoDto.getCommunityCurrentOsVersion()))
                     continue;
                 premiumAppUpdateInfoDto.setCommunityOtherOsVersion(openeulerLatestOsVersion);
-                applicationUpdateHandler.handlePremiumApp(premiumAppUpdateInfoDto);
+                applicationUpdateHandler.handlePremiumApp(premiumAppUpdateInfoDto, Boolean.TRUE);
 
             } catch (Exception e) {
                 log.error(e.getMessage());

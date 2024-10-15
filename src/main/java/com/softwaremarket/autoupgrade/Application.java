@@ -15,7 +15,7 @@ public class Application {
     public static void main(String[] args) {
         ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
         ApplicationVersionTask applicationVersionTask = context.getBean(ApplicationVersionTask.class);
-        applicationVersionTask.premiumAppAutocommit();
+      //  applicationVersionTask.premiumAppAutocommit();
         applicationVersionTask.premiumAppAllOsVersionUpdate();
         System.exit(0);
     }

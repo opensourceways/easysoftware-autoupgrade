@@ -101,7 +101,7 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
             // 创建issue
             Issue issue = createIssue(forkConfig.getAccessToken(), giteeOwner, prTitle, name, pulllRequestConfig.getIssueNum());
             //提交pr并和issue关联
-            PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(forkConfig.getAccessToken(), giteeOwner, name, createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, branch));
+            PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(forkConfig.getAccessToken(), giteeOwner, name, createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, branch, null));
             log.info("pr 已提交：" + pullRequest);
         }
 

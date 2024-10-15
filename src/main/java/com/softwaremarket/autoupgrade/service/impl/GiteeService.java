@@ -149,6 +149,7 @@ public class GiteeService implements IGiteeService {
             result = apiInstance.getReposOwnerRepoRawPath(owner, repo, path, ref);
             log.info(result + "");
         } catch (Exception e) {
+            log.error(owner,repo,path,ref);
             log.error("Exception when calling RepositoriesApi#getReposOwnerRepoRawPath");
             log.info(e.getMessage());
         }
