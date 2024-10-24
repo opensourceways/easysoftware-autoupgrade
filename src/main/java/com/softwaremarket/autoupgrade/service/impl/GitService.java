@@ -49,15 +49,22 @@ public class GitService {
     /**
      * clone or pull the repo.
      */
-    public void cloneOrPull(String remotePath, String localPath) {
-        File repo = new File(localPath);
-        FileUtil.mkdirIfUnexist(repo);
+    public void cloneOrPull(String remotePath) {
+        // repo仓库存放绝对路径地址 
+        String localPath = generateLocalGitPath(remotePath);
+        // repo名称
+        String repoName = localPath.replace(config.getStorePath(), "");
+        // folder地址
+        String folderPath = config.getStorePath();
 
-        File[] files = repo.listFiles((dir, name) -> ".git".equals(name));
-        if (files == null) {
-            return;
-        }
-        if (files.length == 0) {
+        File folder = new File(folderPath);
+        // 遍历目录下是否存在repo仓库
+        File[] repoFiles = folder.listFiles((dir, name) -> repoName.equals(name));
+
+        // 如果不存在 则创建localPath 并clone仓库 否则刷新
+        if (repoFiles.length == 0) {
+            File repo = new File(localPath);
+            FileUtil.mkdirIfUnexist(repo);
             cloneRepo(remotePath);
         } else {
             pullRepo(localPath);
@@ -148,16 +155,8 @@ public class GitService {
         }
 
         UsernamePasswordCredentialsProvider provider = getProvider();
-
-        String[] suffix = remotePath.split("/");
       
-        String localPath = remotePath;
-        if (suffix.length > 1) {
-            localPath = config.getStorePath() + suffix[suffix.length-1];
-        } else {
-            throw new IllegalArgumentException("invalid remote github url");  
-        }
-
+        String localPath = generateLocalGitPath(remotePath);
 
         try (Git git = Git.cloneRepository()
                 .setURI(remotePath)
@@ -169,6 +168,20 @@ public class GitService {
         } catch (GitAPIException e) {
             LOGGER.error("fail to clone repo: {}", localPath);
         }
+    }
+
+    private String generateLocalGitPath(String remoteGitPath) {
+
+        String[] suffix = remoteGitPath.split("/");
+      
+        String localPath = remoteGitPath;
+        if (suffix.length > 1) {
+            localPath = config.getStorePath() + suffix[suffix.length-1];
+        } else {
+            throw new IllegalArgumentException("invalid remote github url");  
+        }
+
+        return localPath;
     }
 
 }
