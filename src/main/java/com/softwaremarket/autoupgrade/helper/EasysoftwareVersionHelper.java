@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.softwaremarket.autoupgrade.config.CollectConfig;
-import com.softwaremarket.autoupgrade.dto.ApplicationUpdateInfoDto;
+import com.softwaremarket.autoupgrade.dto.UpdateInfoDto;
 import com.softwaremarket.autoupgrade.dto.ForkInfoDto;
 import com.softwaremarket.autoupgrade.service.IGiteeService;
 import com.softwaremarket.autoupgrade.util.EmailSenderUtil;
@@ -25,9 +25,10 @@ public class EasysoftwareVersionHelper {
     private final CollectConfig collectConfig;
     private final IGiteeService giteeService;
 
-    public void initUpdateInfo(String appName, ApplicationUpdateInfoDto premiumAppUpdateInfoDto) {
+    public void initUpdateInfo(UpdateInfoDto premiumAppUpdateInfoDto) {
         String projectsInfoUrl = collectConfig.getProjectsInfoUrl();
-        String result = HttpRequestUtil.sendGet(projectsInfoUrl + appName, new HashMap<>());
+        String url = projectsInfoUrl + premiumAppUpdateInfoDto.getAppName();
+        String result = HttpRequestUtil.sendGet(url, new HashMap<>());
         if (result != null) {
             JSONObject resultObj = JacksonUtils.toObject(JSONObject.class, result);
             if (CollectionUtils.isEmpty(resultObj))
@@ -39,12 +40,12 @@ public class EasysoftwareVersionHelper {
 
             for (Object item : items) {
                 JSONObject o = new JSONObject((Map) item);
-                if ("app_up".equals(o.getString("tag"))) {
+                //"GitHub".equals(o.getString("backend"))
+                if ("app_up".equals(o.getString("tag"))||"GitHub".equals(o.getString("backend"))) {
                     premiumAppUpdateInfoDto.setUpAppLatestVersion(o.getString("version").replace("_", "."));
                 }
                 if ("app_openeuler".equals(o.getString("tag"))) {
                     String version = o.getString("version");
-                    premiumAppUpdateInfoDto.setAppName(appName);
                     premiumAppUpdateInfoDto.setOeAppLatestVersion(version);
                     JSONArray rawVersions = o.getJSONArray("raw_versions");
                     List collect = (List) rawVersions.stream().filter(v -> String.valueOf(v).contains(version)).collect(Collectors.toList());

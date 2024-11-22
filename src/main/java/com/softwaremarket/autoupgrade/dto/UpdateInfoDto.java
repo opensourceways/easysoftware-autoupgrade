@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.Objects;
 
 @Data
-public class ApplicationUpdateInfoDto {
+public class UpdateInfoDto {
     //app名字
     private String appName;
 
@@ -22,11 +22,13 @@ public class ApplicationUpdateInfoDto {
     private String communityOtherOsVersion;
 
     //pr Body;
-    private StringBuilder prBody=new StringBuilder();
+    private StringBuilder prBody = new StringBuilder();
 
     private String prTitle;
 
     private String branch;
+
+    private String sourceUrl;
 
     public Boolean checkInfoIsComplete() {
         return Objects.nonNull(this.appName) && Objects.nonNull(this.upAppLatestVersion) && Objects.nonNull(this.oeAppLatestVersion) && Objects.nonNull(this.communityCurrentOsVersion);
@@ -35,5 +37,10 @@ public class ApplicationUpdateInfoDto {
 
     public Boolean checkAppVersion() {
         return String.valueOf(this.upAppLatestVersion).equals(String.valueOf(this.oeAppLatestVersion));
+    }
+
+
+    public Boolean checkRpmInfoIsComplete() {
+        return Objects.nonNull(this.oeAppLatestVersion) && Objects.nonNull(this.sourceUrl) && Objects.nonNull(this.upAppLatestVersion);
     }
 }

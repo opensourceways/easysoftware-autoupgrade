@@ -2,13 +2,22 @@ package com.softwaremarket.autoupgrade.handler;
 
 import com.alibaba.fastjson.JSONObject;
 import com.gitee.sdk.gitee5j.model.*;
+import com.softwaremarket.autoupgrade.config.GitConfig;
 import com.softwaremarket.autoupgrade.config.RpmConfig;
 import com.softwaremarket.autoupgrade.dto.PrInfoDto;
+import com.softwaremarket.autoupgrade.dto.UpdateInfoDto;
 import com.softwaremarket.autoupgrade.enums.CommitInfoEnum;
 import com.softwaremarket.autoupgrade.enums.GiteeRepoEnum;
+import com.softwaremarket.autoupgrade.service.impl.GitService;
+import com.softwaremarket.autoupgrade.util.Base64Util;
+import com.softwaremarket.autoupgrade.util.FileUtil;
+import com.softwaremarket.autoupgrade.util.PatchRegexPatterns;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -18,47 +27,75 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-@EnableAsync
-@RequiredArgsConstructor
-public class RpmUpdateHandler extends BaseCommonUpdateHandler {
-    private PrInfoDto pulllRequestConfig;
 
-    RpmUpdateHandler(RpmConfig rpmConfig) {
-        this.pulllRequestConfig = rpmConfig.getPrInfo();
-        this.forkConfig = rpmConfig.getForkInfo();
-        super.forkConfig = rpmConfig.getForkInfo();
+
+public class RpmUpdateHandler extends BaseCommonUpdateHandler {
+
+    private PrInfoDto pulllRequestConfig;
+    @Autowired
+    private GitService gitService;
+    @Autowired
+    private PatchRegexPatterns patchRegexPatterns;
+    @Autowired
+    private RpmConfig rpmConfig;
+
+    @Autowired
+    private GitConfig config;
+    /**
+     * git service.
+     */
+    @Autowired
+    GitService gitSvc;
+
+    @PostConstruct
+    public void init() {
+        super.forkConfig = this.rpmConfig.getForkInfo();
+        this.pulllRequestConfig = this.rpmConfig.getPrInfo();
     }
 
-    public void handleRpm(JSONObject upObj, JSONObject communityObj) {
-        String community_latest_version = communityObj.getString("latest_version");
-        community_latest_version = "8.4.0";
-        String upObj_latest_version = upObj.getString("latest_version");
-        upObj_latest_version = "8.7.1";
-        String os_version = communityObj.getString("os_version");
-        os_version = "openEuler-24.03-LTS";
-        // 需要更新的软件 name
-        String name = "curl";  //communityObj.getString("name");
-
-
+    public void handleRpm(UpdateInfoDto updateInfoDto) {
+        String communityLatestVersion = null;
+        String sourceUrl;
+        String upLatestVersion = updateInfoDto.getUpAppLatestVersion();
         String branch = CommitInfoEnum.PremiumApp.getBranch();
-        String prTitle = String.format(pulllRequestConfig.getPrTitle(), name /*+ "-" + os_version*/, community_latest_version, upObj_latest_version);
+
+        // 需要更新的软件 name
+        String name = updateInfoDto.getAppName();
+        //获取原始的仓库信息
+        List<JSONObject> contents = giteeService.getContents(GiteeRepoEnum.RPM.getOwner(), name, "/", forkConfig.getAccessToken(), branch);
+        List<JSONObject> specContents = contents.stream().filter(a -> {
+            return (name + ".spec").equals(a.getString("name"));
+        }).collect(Collectors.toList());
+
+        if (!CollectionUtils.isEmpty(specContents)) {
+            updateInfoBySpec(name, specContents.get(0).getString("path"), branch, updateInfoDto);
+            communityLatestVersion = updateInfoDto.getOeAppLatestVersion();
+        }
+        if (!updateInfoDto.checkRpmInfoIsComplete()) {
+            log.info(name + "升级信息不足,取消升级！");
+            return;
+        }
+        sourceUrl = updateInfoDto.getSourceUrl().replace("%{name}", name).replace("%{version}", upLatestVersion);
+
+        String prTitle = String.format(pulllRequestConfig.getPrTitle(), name /*+ "-" + os_version*/, communityLatestVersion, upLatestVersion);
 
         String giteeOwner = GiteeRepoEnum.RPM.getOwner();
 
         // 版本相同或者已经提交过相同pr将不再处理
-        if (upObj_latest_version.equals(community_latest_version) ||
+        if (upLatestVersion.equals(communityLatestVersion) ||
                 checkHasCreatePR(prTitle, giteeOwner, name, forkConfig.getAccessToken())) {
             return;
         }
 
 
         //获取fork后的仓库信息
-        List<JSONObject> contents = giteeService.getContents(forkConfig.getOwner(), name, "/", forkConfig.getAccessToken(), branch);
+        contents = giteeService.getContents(forkConfig.getOwner(), name, "/", forkConfig.getAccessToken(), branch);
 
         //代码提交、pr的源分支
         String handleBranch = branch;
@@ -84,35 +121,122 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
             }
 
         }
-        contents = contents.stream().filter(a -> {
+        specContents = contents.stream().filter(a -> {
             return (name + ".spec").equals(a.getString("name"));
         }).collect(Collectors.toList());
-
-        if (CollectionUtils.isEmpty(contents)) {
+        if (CollectionUtils.isEmpty(specContents)) {
             log.info("仓库中没有 spec文件");
             return;
         }
-        JSONObject specFileInfo = contents.get(0);
-        String path = specFileInfo.getString("path");
-        RepoCommitsBody repoCommitsBody = handleRpmCommitsBody(name, path, branch, community_latest_version, upObj_latest_version);
-        if (repoCommitsBody != null) {
+
+        List<JSONObject> patchContents = contents.stream().filter(a -> {
+            return a.getString("name").endsWith(".patch");
+        }).collect(Collectors.toList());
+
+        List<JSONObject> tarContents = contents.stream().filter(a -> {
+            return a.getString("name").matches(".*\\.tar\\..*");
+        }).collect(Collectors.toList());
+
+        RepoCommitsBody repoCommitsBody = getTreeRepoCommitsBody(String.format(CommitInfoEnum.RPM.getMessage(), name, upLatestVersion), branch);
+        //上传tar包,tar包上传失败取消升级
+        if (!hanleTarCommitsBody(tarContents.get(0).getString("name"), sourceUrl, tarContents.get(0).getString("path"), repoCommitsBody)) {
+            return;
+        }
+
+        //更新sprc文件
+        handleSpecCommitsBody(name, specContents.get(0).getString("path"), branch, communityLatestVersion, upLatestVersion, repoCommitsBody);
+
+        //如果数据源来自github,需要比对github的提交信息从而删除patch文件
+        if (sourceUrl.contains("github.com")) {
+            hanlePatchCommitsBody(sourceUrl.split(name)[0], patchContents, name, branch, repoCommitsBody, communityLatestVersion, upLatestVersion);
+        }
+        if (repoCommitsBody != null && !CollectionUtils.isEmpty(repoCommitsBody.getActions())) {
             RepoCommitWithFiles repoCommitWithFiles = giteeService.postReposOwnerRepoCommits(forkConfig.getAccessToken(), forkConfig.getOwner(), name, repoCommitsBody);
             log.info("文件commit update成功：" + repoCommitWithFiles.getCommentsUrl());
             // 创建issue
-            Issue issue = createIssue(forkConfig.getAccessToken(), giteeOwner, prTitle, name, pulllRequestConfig.getIssueNum());
-            //提交pr并和issue关联
-            PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(forkConfig.getAccessToken(), giteeOwner, name, createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, branch, null));
+            //  Issue issue = createIssue(forkConfig.getAccessToken(), giteeOwner, prTitle, name, pulllRequestConfig.getIssueNum());
+            //提交pr
+            PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(forkConfig.getAccessToken(), giteeOwner, name, createRepoPullsBody(null, forkConfig.getOwner() + ":" + handleBranch, branch, null, prTitle));
             log.info("pr 已提交：" + pullRequest);
         }
 
     }
 
+    //组装tar文件新增body
+    private Boolean hanleTarCommitsBody(String fileName, String sourceUrl, String path, RepoCommitsBody repoCommitsBody) {
+        String[] split = sourceUrl.split("/");
+        String newFileName = split[split.length - 1];
+        String tarPath = config.getStorePath() + newFileName;
+        boolean downloadFile = FileUtil.downloadFile(sourceUrl, tarPath);
+        if (downloadFile) {
+            try {
+                List<GitAction> actions = repoCommitsBody.getActions();
+                // 删除原始包
+                GitAction delete = new GitAction();
+                actions.add(delete);
+                delete.setAction(GitAction.ActionEnum.DELETE);
+                delete.setPath(path);
 
-    private RepoCommitsBody handleRpmCommitsBody(String name, String path, String branch, String oldestVersion, String latestVersion) {
-        RepoCommitsBody repoCommitsBody = null;
+                //上传新包
+                GitAction create = new GitAction();
+                actions.add(create);
+                create.setAction(GitAction.ActionEnum.CREATE);
+                create.setEncoding(GitAction.EncodingEnum.BASE64);
+                create.setContent(Base64Util.fileToBase64Str(new File(tarPath)));
+                create.setPath(path.replace(fileName, newFileName));
+                FileUtil.deleteFile(tarPath);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return Boolean.FALSE;
+            }
+        }
+        return downloadFile;
+    }
+
+    //组装patch文件删除body
+    private void hanlePatchCommitsBody(String remotePath, List<JSONObject> patchContents, String name, String branch, RepoCommitsBody repoCommitsBody, String communityLatestVersion, String upLatestVersion) {
+        gitSvc.cloneOrPull(remotePath);
+        List<String> fetchCommitIdsInRange = gitService.fetchCommitIdsInRange(name, communityLatestVersion, upLatestVersion);
+        System.out.println(fetchCommitIdsInRange);
+        for (JSONObject patchContent : patchContents) {
+            String path = patchContent.getString("path");
+            String fileName = patchContent.getString("name");
+            File file = giteeService.getReposOwnerRepoRawPath(forkConfig.getAccessToken(), forkConfig.getOwner(), name, path, branch);
+            if (Objects.isNull(file)) {
+                continue;
+            }
+            List<String> commitIdList = patchRegexPatterns.fetchCommitIdFromPatchFile(file.getPath());
+            System.out.println("commitIdList:" + commitIdList);
+            if (CollectionUtils.isEmpty(commitIdList)) {
+                continue;
+            }
+            if (checkPatchNeedDelete(fetchCommitIdsInRange, commitIdList)) {
+                GitAction gitAction = new GitAction();
+                repoCommitsBody.getActions().add(gitAction);
+                gitAction.setAction(GitAction.ActionEnum.DELETE);
+                gitAction.setPath(path);
+                continue;
+            }
+
+        }
+    }
+
+
+    private Boolean checkPatchNeedDelete(List<String> fetchCommitIdsInRange, List<String> commitIdList) {
+        for (String realCommitId : fetchCommitIdsInRange) {
+            for (String containsCommitId : commitIdList) {
+                if (!containsCommitId.contains(realCommitId)) {
+                    return Boolean.TRUE;
+                }
+            }
+        }
+        return Boolean.FALSE;
+    }
+
+    // 处理spec文件
+    private void handleSpecCommitsBody(String name, String path, String branch, String oldestVersion, String latestVersion, RepoCommitsBody repoCommitsBody) {
         File file = giteeService.getReposOwnerRepoRawPath(forkConfig.getAccessToken(), forkConfig.getOwner(), name, path, branch);
         if (file != null) {
-            repoCommitsBody = getTreeRepoCommitsBody(String.format(CommitInfoEnum.RPM.getMessage(), name, latestVersion), branch);
             List<GitAction> gitActionList = repoCommitsBody.getActions();
             GitAction gitAction = new GitAction();
             gitActionList.add(gitAction);
@@ -128,22 +252,37 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
                 log.error(e.getMessage());
             }
         }
-        return repoCommitsBody;
 
     }
 
 
-    private String rpmSpecFileContentHandel(String filePath, String name, String oldestVersion, String latestVersion) {
-        final String CHARSET_NAME = "UTF-8";
-        List<String> content = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), CHARSET_NAME))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                content.add(line);
+    private void updateInfoBySpec(String name, String path, String branch, UpdateInfoDto updateInfoDto) {
+        File file = giteeService.getReposOwnerRepoRawPath(forkConfig.getAccessToken(), GiteeRepoEnum.RPM.getOwner(), name, path, branch);
+        if (file != null) {
+            List<String> content = FileUtil.getFileContetList(file.getPath());
+            Boolean hasUpdateVersion = Boolean.FALSE;
+            Boolean hasUpdateSource = Boolean.FALSE;
+            for (int i = 0; i < content.size(); i++) {
+                if (hasUpdateSource && hasUpdateVersion)
+                    break;
+                String lineContent = content.get(i);
+                if (lineContent.contains("Version:")) {
+                    String[] split = lineContent.split("Version:");
+                    updateInfoDto.setOeAppLatestVersion(split[1].trim());
+                    hasUpdateVersion = Boolean.TRUE;
+                }
+                if (lineContent.contains("Source") && lineContent.contains(".tar.")) {
+                    String[] split = lineContent.split("  ");
+                    updateInfoDto.setSourceUrl(split[split.length - 1].trim());
+                    hasUpdateSource = Boolean.TRUE;
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            FileUtil.deleteFile(file.getPath());
         }
+    }
+
+    private String rpmSpecFileContentHandel(String filePath, String name, String oldestVersion, String latestVersion) {
+        List<String> content = FileUtil.getFileContetList(filePath);
         StringBuilder contentBuilder = new StringBuilder();
         LocalDate now = LocalDate.now();
         String week = String.valueOf(now.getDayOfWeek()).toLowerCase(Locale.ROOT).substring(0, 3);
@@ -177,6 +316,9 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
                 contentBuilder.append("- SUG:NA").append("\n");
                 String format = String.format("- DESC:update %s to %s \n", name, latestVersion);
                 contentBuilder.append(format).append("\n");
+            }
+            if (i == content.size() - 1) {
+                contentBuilder.append("\n");
             }
         }
         return contentBuilder.toString();

@@ -1,7 +1,7 @@
 package com.softwaremarket.autoupgrade.task;
 
 import com.softwaremarket.autoupgrade.config.ApplicationConfig;
-import com.softwaremarket.autoupgrade.dto.ApplicationUpdateInfoDto;
+import com.softwaremarket.autoupgrade.dto.UpdateInfoDto;
 import com.softwaremarket.autoupgrade.handler.ApplicationUpdateHandler;
 
 import com.softwaremarket.autoupgrade.helper.EasysoftwareVersionHelper;
@@ -35,9 +35,10 @@ public class ApplicationVersionTask {
         Set<String> appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
         for (String appName : appNameSet) {
             try {
-                ApplicationUpdateInfoDto premiumAppUpdateInfoDto = new ApplicationUpdateInfoDto();
+                UpdateInfoDto premiumAppUpdateInfoDto = new UpdateInfoDto();
+                premiumAppUpdateInfoDto.setAppName(appName);
                 //从软件市场获取精品应用上下游版本
-                easysoftwareVersionHelper.initUpdateInfo(appName, premiumAppUpdateInfoDto);
+                easysoftwareVersionHelper.initUpdateInfo(premiumAppUpdateInfoDto);
                 if (premiumAppUpdateInfoDto.checkInfoIsComplete() && !premiumAppUpdateInfoDto.getOeAppLatestVersion().equals(premiumAppUpdateInfoDto.getUpAppLatestVersion())) {
                     log.info("精品应用{}当前欧拉版本：{},镜像版本：{},上游最新版本：{},触发自动更新！", appName, premiumAppUpdateInfoDto.getCommunityCurrentOsVersion(), premiumAppUpdateInfoDto.getOeAppLatestVersion(), premiumAppUpdateInfoDto.getUpAppLatestVersion());
                     applicationUpdateHandler.handlePremiumApp(premiumAppUpdateInfoDto, Boolean.TRUE);
@@ -60,9 +61,10 @@ public class ApplicationVersionTask {
         Set<String> appNameSet = easysoftwareVersionHelper.getEasysoftApppkgSet();
         for (String appName : appNameSet) {
             try {
-                ApplicationUpdateInfoDto premiumAppUpdateInfoDto = new ApplicationUpdateInfoDto();
+                UpdateInfoDto premiumAppUpdateInfoDto = new UpdateInfoDto();
+                premiumAppUpdateInfoDto.setAppName(appName);
                 //从软件市场获取精品应用上下游版本
-                easysoftwareVersionHelper.initUpdateInfo(appName, premiumAppUpdateInfoDto);
+                easysoftwareVersionHelper.initUpdateInfo(premiumAppUpdateInfoDto);
                 if (premiumAppUpdateInfoDto.checkInfoIsComplete()) {
                     log.info("批量精品应用{}当前欧拉版本：{},镜像版本：{},上游最新版本：{},触发自动更新！", appName, premiumAppUpdateInfoDto.getCommunityCurrentOsVersion(), premiumAppUpdateInfoDto.getOeAppLatestVersion(), premiumAppUpdateInfoDto.getUpAppLatestVersion());
                     applicationUpdateHandler.batchUpdatePremiumApp(dockerHubOpeneulerOsVersion, premiumAppUpdateInfoDto);
@@ -85,8 +87,9 @@ public class ApplicationVersionTask {
         String openeulerLatestOsVersion = easysoftwareVersionHelper.getOpeneulerLatestOsVersion().split("openEuler-")[1].toLowerCase(Locale.ROOT);
         for (String appName : appNameSet) {
             try {
-                ApplicationUpdateInfoDto premiumAppUpdateInfoDto = new ApplicationUpdateInfoDto();
-                easysoftwareVersionHelper.initUpdateInfo(appName, premiumAppUpdateInfoDto);
+                UpdateInfoDto premiumAppUpdateInfoDto = new UpdateInfoDto();
+                premiumAppUpdateInfoDto.setAppName(appName);
+                easysoftwareVersionHelper.initUpdateInfo(premiumAppUpdateInfoDto);
                 if (!premiumAppUpdateInfoDto.checkInfoIsComplete() || currentOsVersionLatest(openeulerLatestOsVersion, premiumAppUpdateInfoDto.getCommunityCurrentOsVersion()))
                     continue;
                 premiumAppUpdateInfoDto.setCommunityOtherOsVersion(openeulerLatestOsVersion);

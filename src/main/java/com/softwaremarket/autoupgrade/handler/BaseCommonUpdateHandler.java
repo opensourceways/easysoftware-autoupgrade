@@ -211,17 +211,20 @@ public class BaseCommonUpdateHandler {
     }
 
 
-    protected RepoPullsBody createRepoPullsBody(Issue issue, String headBranch, String baseBranch, String prBody) {
+    protected RepoPullsBody createRepoPullsBody(Issue issue, String headBranch, String baseBranch, String prBody, String prTitle) {
         RepoPullsBody body = new RepoPullsBody();
+
         //会根据issue的title和body去填充pr的
-        body.setTitle(issue.getTitle());
+        body.setTitle(prTitle);
+
         // body.setIssue(issue.getNumber());
         body.setHead(headBranch);
         body.setBase(baseBranch);
         //将pr和issue关联
 
-
-        body.setBody("#" + issue.getNumber() +"\n"+ prBody);
+        if (issue != null) {
+            body.setBody("#" + issue.getNumber() + "\n" + prBody);
+        }
         //合并pr后删除源分支
         /* body.pruneSourceBranch(Boolean.TRUE);*/
 

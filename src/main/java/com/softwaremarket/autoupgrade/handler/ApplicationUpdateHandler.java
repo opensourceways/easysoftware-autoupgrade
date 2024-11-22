@@ -3,7 +3,7 @@ package com.softwaremarket.autoupgrade.handler;
 import com.alibaba.fastjson.JSONObject;
 import com.gitee.sdk.gitee5j.model.*;
 import com.softwaremarket.autoupgrade.config.ApplicationConfig;
-import com.softwaremarket.autoupgrade.dto.ApplicationUpdateInfoDto;
+import com.softwaremarket.autoupgrade.dto.UpdateInfoDto;
 import com.softwaremarket.autoupgrade.dto.ForkInfoDto;
 import com.softwaremarket.autoupgrade.dto.PrInfoDto;
 import com.softwaremarket.autoupgrade.dto.TreeEntryExpandDto;
@@ -44,7 +44,7 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
         super.forkConfig = applicationConfig.getForkInfo();
     }
 
-    public void batchUpdatePremiumApp(List<String> allOsVersionList, ApplicationUpdateInfoDto premiumAppUpdateInfo) {
+    public void batchUpdatePremiumApp(List<String> allOsVersionList, UpdateInfoDto premiumAppUpdateInfo) {
 
         for (int i = 0; i < allOsVersionList.size(); i++) {
             String osversion = allOsVersionList.get(i);
@@ -70,7 +70,7 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
     }
 
 
-    public void handlePremiumApp(ApplicationUpdateInfoDto premiumAppUpdateInfo, Boolean submitPr) {
+    public void handlePremiumApp(UpdateInfoDto premiumAppUpdateInfo, Boolean submitPr) {
         String oeAppLatestVersion = premiumAppUpdateInfo.getOeAppLatestVersion();
         String upAppLatestVersion = premiumAppUpdateInfo.getUpAppLatestVersion();
         String communityOsVersion = premiumAppUpdateInfo.getCommunityCurrentOsVersion();
@@ -181,7 +181,7 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
                 Issue issue = createIssue(token, giteeOwner, prTitle, giteeRepo, pulllRequestConfig.getIssueNum());
                 //提交pr并和issue关联
                 PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(token, giteeOwner, giteeRepo,
-                        createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, CommitInfoEnum.PremiumApp.getBranch(), premiumAppUpdateInfo.getPrBody().toString()));
+                        createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, CommitInfoEnum.PremiumApp.getBranch(), premiumAppUpdateInfo.getPrBody().toString(),prTitle));
                 log.info("pr 已提交：" + pullRequest);
                 EmailSenderUtil.applicationSednMailMap.add(applicationConfig.getMailInfo().getApplicationDefaultReveiver(), getPRinfoByPrTitle(prTitle, giteeOwner, giteeRepo, token));
             }

@@ -12,6 +12,9 @@ package com.softwaremarket.autoupgrade.task;
 
 import com.alibaba.fastjson.JSONObject;
 import com.softwaremarket.autoupgrade.config.RepoConfig;
+import com.softwaremarket.autoupgrade.config.RpmConfig;
+import com.softwaremarket.autoupgrade.dto.RepoInfoDto;
+import com.softwaremarket.autoupgrade.dto.UpdateInfoDto;
 import com.softwaremarket.autoupgrade.handler.RpmUpdateHandler;
 import com.softwaremarket.autoupgrade.helper.EasysoftwareVersionHelper;
 import com.softwaremarket.autoupgrade.service.impl.GitService;
@@ -24,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
@@ -59,24 +63,30 @@ public class RpmVersionTask {
      */
     @Autowired
     RepoConfig repoConfig;
+    @Autowired
+    private RpmConfig rpmConfig;
 
     /**
      * auto upgrade rpm version.
-     *
      */
     //@Scheduled(cron = "${softwareconfig.rpmSchedule}")
     public void rpmAutocommit() {
+        //  refreshUpstreamRepo();
         //  Set<String> rpmNameSet = giteeService.getReposProjects(rpmConfig.getRepo(), forkConfig.getAccessToken());
-        Set<String> rpmNameSet = new HashSet<>();
-        rpmNameSet.add("curl");
-        System.out.println(rpmNameSet);
+        RepoInfoDto repoInfo = rpmConfig.getRepoInfo();
+        Set<String> rpmNameSet = new HashSet<>(Arrays.asList(repoInfo.getRepo().split(",")));
         for (String appName : rpmNameSet) {
             try {
-                com.alibaba.fastjson.JSONObject upObj = new com.alibaba.fastjson.JSONObject();
-                com.alibaba.fastjson.JSONObject openeulerObj = new JSONObject();
-                //  easysoftwareVersionHelper.getEasysoftVersion(appName, upObj, openeulerObj);
-                if (upObj.size() > 0 && openeulerObj.size() > 0)
-                    rpmUpdateHandler.handleRpm(upObj, openeulerObj);
+                UpdateInfoDto updateInfoDto = new UpdateInfoDto();
+                updateInfoDto.setAppName(appName);
+                //从软件市场获取精品应用上下游版本
+                easysoftwareVersionHelper.initUpdateInfo(updateInfoDto);
+                updateInfoDto.setCommunityCurrentOsVersion(null);
+
+               /* if (appName.equals("redis6")) {
+                    updateInfoDto.setUpAppLatestVersion("6.2.14");
+                }*/
+                rpmUpdateHandler.handleRpm(updateInfoDto);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -85,7 +95,6 @@ public class RpmVersionTask {
 
     /**
      * refresh remote upstream repo by using git clone or git pull.
-     *
      */
     public void refreshUpstreamRepo() {
 

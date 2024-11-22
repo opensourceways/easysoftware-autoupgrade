@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import com.softwaremarket.autoupgrade.config.RexConfig;
 
 import jakarta.annotation.PostConstruct;
+
 import java.util.regex.Matcher;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,7 +29,7 @@ import java.util.List;
 
 @Component
 public class PatchRegexPatterns {
-     /**
+    /**
      * logger.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(PatchRegexPatterns.class);
@@ -43,45 +44,45 @@ public class PatchRegexPatterns {
      */
     private List<Pattern> rexPatters;
 
-    @PostConstruct  
-    public void init() {  
-        List<String> rexList = rexConfig.getRexlist();  
-        rexPatters = new ArrayList<>();  
-        for (String rex : rexList) {  
-            Pattern pattern = Pattern.compile(rex, Pattern.DOTALL);  
-            rexPatters.add(pattern);  
-        }  
-    }  
-
-    private boolean IsMatchChainRex(String input){
-        for (Pattern pattern : rexPatters) {  
-            Matcher matcher = pattern.matcher(input);  
-            if (matcher.matches()) {  
-                return true;  
-            }  
-        } 
-        return false;  
+    @PostConstruct
+    public void init() {
+        List<String> rexList = rexConfig.getRexlist();
+        rexPatters = new ArrayList<>();
+        for (String rex : rexList) {
+            Pattern pattern = Pattern.compile(rex, Pattern.DOTALL);
+            rexPatters.add(pattern);
+        }
     }
 
-    public List<String> fetchCommitIdFromPatchFile(String filePath){
-        
+    private boolean IsMatchChainRex(String input) {
+        for (Pattern pattern : rexPatters) {
+            Matcher matcher = pattern.matcher(input);
+            if (matcher.matches()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<String> fetchCommitIdFromPatchFile(String filePath) {
+
         List<String> res = new ArrayList<>();
-        try {  
+        try {
             // 读取文件的所有行到一个List中  
-            List<String> lines = Files.readAllLines(Paths.get(filePath));  
-        
+            List<String> lines = Files.readAllLines(Paths.get(filePath));
+
             // 对每行数据执行正则
-            for (String line : lines) {  
+            for (String line : lines) {
                 boolean isCommit = IsMatchChainRex(line);
                 if (isCommit) {
                     res.add(line);
                 }
 
-            }  
-        } catch (IOException e) {  
+            }
+        } catch (IOException e) {
             // 处理文件读取错误  
             LOGGER.error("can not open file");
-        }  
+        }
         return res;
     }
 

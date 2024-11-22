@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.stereotype.Component;
-import org.eclipse.jgit.lib.Repository; 
+import org.eclipse.jgit.lib.Repository;
 import com.softwaremarket.autoupgrade.util.FileUtil;
 import com.softwaremarket.autoupgrade.config.GitConfig;
 
@@ -62,7 +62,7 @@ public class GitService {
         File[] repoFiles = folder.listFiles((dir, name) -> repoName.equals(name));
 
         // 如果不存在 则创建localPath 并clone仓库 否则刷新
-        if (repoFiles.length == 0) {
+        if (repoFiles == null || repoFiles.length == 0) {
             File repo = new File(localPath);
             FileUtil.mkdirIfUnexist(repo);
             cloneRepo(remotePath);
@@ -95,36 +95,35 @@ public class GitService {
         }
     }
 
-     /**
+    /**
      * git pull the repo.
      */
-    public List<String> fetchCommitIdsInRange(String localPath,String startId, String endId) {
-       
+    public List<String> fetchCommitIdsInRange(String pkgName, String startId, String endId) {
+        String localPath = config.getStorePath() + pkgName;
         if (startId == null || endId == null) {
             LOGGER.error("One or both commit IDs/tags not found: " + startId + ", " + endId);
             return Collections.emptyList();
         }
 
         List<String> res = new ArrayList<>();
-        
-        File repoDir = new File(localPath); // 仓库路径，包含.git目录  
-        
-        try (Repository repository = new FileRepositoryBuilder()  
-                .setGitDir(new File(repoDir, ".git")) 
-                .readEnvironment()  
-                .findGitDir()  
-                .build()) 
-        {  
-            try (Git git = new Git(repository)) {  
+
+        File repoDir = new File(localPath); // 仓库路径，包含.git目录
+
+        try (Repository repository = new FileRepositoryBuilder()
+                .setGitDir(new File(repoDir, ".git"))
+                .readEnvironment()
+                .findGitDir()
+                .build()) {
+            try (Git git = new Git(repository)) {
                 // 解析起始和结束提交ID（或标签）  
-                ObjectId startObjectId = repository.resolve(startId + "^{commit}");  
-                ObjectId endObjectId = repository.resolve(endId + "^{commit}");  
-                
-                Iterable<RevCommit> commits = git.log()  
-                        .addRange(startObjectId, endObjectId) 
+                ObjectId startObjectId = repository.resolve(startId + "^{commit}");
+                ObjectId endObjectId = repository.resolve(endId + "^{commit}");
+
+                Iterable<RevCommit> commits = git.log()
+                        .addRange(startObjectId, endObjectId)
                         .call();  // 注意：这里的范围是[start, end)，不包括end  
-  
-                for (RevCommit commit : commits) {  
+
+                for (RevCommit commit : commits) {
                     String[] strCommitId = commit.getId().toString().split(" ");
                     String strId = "";
                     if (strCommitId.length >= 1) {
@@ -133,14 +132,14 @@ public class GitService {
                         strId = commit.getId().toString();
                     }
                     res.add(strId);
-                }  
-            }  
-        }  catch (GitAPIException e) {
+                }
+            }
+        } catch (GitAPIException e) {
             LOGGER.error("fail to clone repo: {}", localPath);
         } catch (IOException e) {
             LOGGER.error("fail to clone repo: {}", localPath);
         } catch (NullPointerException e) {
-            LOGGER.error("chekc the input tag start:{} end:{}, tags not found in upstream",startId,endId);
+            LOGGER.error("chekc the input tag start:{} end:{}, tags not found in upstream", startId, endId);
         }
 
         return res;
@@ -150,12 +149,12 @@ public class GitService {
      * clone the repo.
      */
     public void cloneRepo(String remotePath) {
-        if (remotePath ==null || remotePath.trim().isEmpty()) {
-            throw new IllegalArgumentException("Remote path cannot be null or empty");  
+        if (remotePath == null || remotePath.trim().isEmpty()) {
+            throw new IllegalArgumentException("Remote path cannot be null or empty");
         }
 
         UsernamePasswordCredentialsProvider provider = getProvider();
-      
+
         String localPath = generateLocalGitPath(remotePath);
 
         try (Git git = Git.cloneRepository()
@@ -173,12 +172,12 @@ public class GitService {
     private String generateLocalGitPath(String remoteGitPath) {
 
         String[] suffix = remoteGitPath.split("/");
-      
+
         String localPath = remoteGitPath;
         if (suffix.length > 1) {
-            localPath = config.getStorePath() + suffix[suffix.length-1];
+            localPath = config.getStorePath() + suffix[suffix.length - 1];
         } else {
-            throw new IllegalArgumentException("invalid remote github url");  
+            throw new IllegalArgumentException("invalid remote github url");
         }
 
         return localPath;
