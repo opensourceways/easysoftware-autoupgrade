@@ -81,7 +81,7 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
             log.info(name + "升级信息不足,取消升级！");
             return;
         }
-        sourceUrl = updateInfoDto.getSourceUrl().replace("%{name}", name).replace("%{version}", upLatestVersion);
+        sourceUrl = updateInfoDto.getSourceUrl().replace("%{gem_name}", name.contains("rubygem-")? name.replace("rubygem-",""):name).replace("%{version}", upLatestVersion);
 
         String prTitle = String.format(pulllRequestConfig.getPrTitle(), name /*+ "-" + os_version*/, communityLatestVersion, upLatestVersion);
 
@@ -134,7 +134,7 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
         }).collect(Collectors.toList());
 
         List<JSONObject> tarContents = contents.stream().filter(a -> {
-            return a.getString("name").matches(".*\\.tar\\..*");
+            return a.getString("name").matches(".*\\.tar\\..*") || a.getString("name").endsWith("gem");
         }).collect(Collectors.toList());
 
         RepoCommitsBody repoCommitsBody = getTreeRepoCommitsBody(String.format(CommitInfoEnum.RPM.getMessage(), name, upLatestVersion), branch);
@@ -271,9 +271,10 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
                     updateInfoDto.setOeAppLatestVersion(split[1].trim());
                     hasUpdateVersion = Boolean.TRUE;
                 }
-                if (lineContent.contains("Source") && lineContent.contains(".tar.")) {
-                    String[] split = lineContent.split("  ");
-                    updateInfoDto.setSourceUrl(split[split.length - 1].trim());
+                if (lineContent.contains("Source") && (lineContent.contains(".tar.") || lineContent.endsWith(".gem"))) {
+                    String[] split = lineContent.split(":");
+
+                    updateInfoDto.setSourceUrl(split[1].trim()+":"+split[2]);
                     hasUpdateSource = Boolean.TRUE;
                 }
             }

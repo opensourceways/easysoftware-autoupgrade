@@ -174,14 +174,13 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
                             append("|----------|-------------|").append("\n");
                 }
                 prBody.append("| ").append(upAppLatestVersion).append(" | ").append(addVersion).append(" |").append("\n");
-                System.out.println(prBody);
             }
             if (submitPr) {
                 // 创建issue
                 Issue issue = createIssue(token, giteeOwner, prTitle, giteeRepo, pulllRequestConfig.getIssueNum());
                 //提交pr并和issue关联
                 PullRequest pullRequest = giteeService.postReposOwnerRepoPulls(token, giteeOwner, giteeRepo,
-                        createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, CommitInfoEnum.PremiumApp.getBranch(), premiumAppUpdateInfo.getPrBody().toString(),prTitle));
+                        createRepoPullsBody(issue, forkConfig.getOwner() + ":" + handleBranch, CommitInfoEnum.PremiumApp.getBranch(), premiumAppUpdateInfo.getPrBody().toString(), prTitle));
                 log.info("pr 已提交：" + pullRequest);
                 EmailSenderUtil.applicationSednMailMap.add(applicationConfig.getMailInfo().getApplicationDefaultReveiver(), getPRinfoByPrTitle(prTitle, giteeOwner, giteeRepo, token));
             }
@@ -196,6 +195,13 @@ public class ApplicationUpdateHandler extends BaseCommonUpdateHandler {
         List<GitAction> actions = treeRepoCommitsBody.getActions();
         String dockfilepath = "";
         GitAction metaGitAction = null;
+
+
+        for (int i = 0; i < actions.size(); i++) {
+            GitAction gitAction = actions.get(i);
+            String path = gitAction.getPath();
+            String[] split = path.split("/");
+        }
         for (int i = 0; i < actions.size(); i++) {
             GitAction gitAction = actions.get(i);
             String path = gitAction.getPath();

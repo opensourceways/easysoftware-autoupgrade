@@ -74,6 +74,7 @@ public class RpmVersionTask {
         //  refreshUpstreamRepo();
         //  Set<String> rpmNameSet = giteeService.getReposProjects(rpmConfig.getRepo(), forkConfig.getAccessToken());
         RepoInfoDto repoInfo = rpmConfig.getRepoInfo();
+        easysoftwareVersionHelper.getToken(rpmConfig.getForkInfo());
         Set<String> rpmNameSet = new HashSet<>(Arrays.asList(repoInfo.getRepo().split(",")));
         for (String appName : rpmNameSet) {
             try {
@@ -83,6 +84,7 @@ public class RpmVersionTask {
                 easysoftwareVersionHelper.initUpdateInfo(updateInfoDto);
                 updateInfoDto.setCommunityCurrentOsVersion(null);
 
+                //手动更改名称和版本
                /* if (appName.equals("redis6")) {
                     updateInfoDto.setUpAppLatestVersion("6.2.14");
                 }*/
