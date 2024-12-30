@@ -11,12 +11,14 @@ import com.softwaremarket.autoupgrade.enums.GiteeRepoEnum;
 import com.softwaremarket.autoupgrade.service.impl.GitService;
 import com.softwaremarket.autoupgrade.util.Base64Util;
 import com.softwaremarket.autoupgrade.util.FileUtil;
+import com.softwaremarket.autoupgrade.util.HtmlParseUtil;
 import com.softwaremarket.autoupgrade.util.PatchRegexPatterns;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
@@ -79,14 +81,29 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
         }
         if (!updateInfoDto.checkRpmInfoIsComplete()) {
             log.info(name + "升级信息不足,取消升级！");
+            if(updateInfoDto.getUpAppLatestVersion() ==null){
+                FileUtil.writeFileContext("D:\\ProjectCode\\github\\easysoftware-autoupgrade\\src\\main\\resources\\上游版本缺失.txt",updateInfoDto.getAppName());
+            }
+
+
+            if(updateInfoDto.getSourceUrl() ==null){
+                FileUtil.writeFileContext("D:\\ProjectCode\\github\\easysoftware-autoupgrade\\src\\main\\resources\\sourceurl.txt",updateInfoDto.getAppName());
+            }
             return;
         }
-        sourceUrl = updateInfoDto.getSourceUrl().replace("%{gem_name}", name.contains("rubygem-")? name.replace("rubygem-",""):name).replace("%{version}", upLatestVersion);
-
+        String sourcePkgName=name.replace("rubygem-","").replace("perl-", "").replace("nodejs-","");
+        sourceUrl = updateInfoDto.getSourceUrl().replace("%{version}", upLatestVersion).replace("%{cpan_version}",upLatestVersion);
+        sourceUrl = sourceUrl.replace("%{upstream_name}", sourcePkgName);
+        sourceUrl = sourceUrl.replace("%{mod_name}",sourcePkgName);
+        sourceUrl = sourceUrl.replace("%{perl_package_name}", sourcePkgName);
+        sourceUrl = sourceUrl.replace("%{name}", sourcePkgName);
+        sourceUrl =sourceUrl.replace("%{srcname}",sourcePkgName);
         String prTitle = String.format(pulllRequestConfig.getPrTitle(), name /*+ "-" + os_version*/, communityLatestVersion, upLatestVersion);
 
         String giteeOwner = GiteeRepoEnum.RPM.getOwner();
-
+        if(upLatestVersion.equals(communityLatestVersion)){
+            FileUtil.writeFileContext("D:\\ProjectCode\\github\\easysoftware-autoupgrade\\src\\main\\resources\\版本相同.txt",updateInfoDto.getAppName()+"  : "+communityLatestVersion);
+        }
         // 版本相同或者已经提交过相同pr将不再处理
         if (upLatestVersion.equals(communityLatestVersion) ||
                 checkHasCreatePR(prTitle, giteeOwner, name, forkConfig.getAccessToken())) {
@@ -140,9 +157,9 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
         RepoCommitsBody repoCommitsBody = getTreeRepoCommitsBody(String.format(CommitInfoEnum.RPM.getMessage(), name, upLatestVersion), branch);
         //上传tar包,tar包上传失败取消升级
         if (!hanleTarCommitsBody(tarContents.get(0).getString("name"), sourceUrl, tarContents.get(0).getString("path"), repoCommitsBody)) {
+            FileUtil.writeFileContext("D:\\ProjectCode\\github\\easysoftware-autoupgrade\\src\\main\\resources\\sourceurl.txt",updateInfoDto.getAppName()+"  : "+sourceUrl);
             return;
         }
-
         //更新sprc文件
         handleSpecCommitsBody(name, specContents.get(0).getString("path"), branch, communityLatestVersion, upLatestVersion, repoCommitsBody);
 
@@ -312,11 +329,18 @@ public class RpmUpdateHandler extends BaseCommonUpdateHandler {
             // todo changgelog 写死
             if (s.contains("%changelog")) {
                 contentBuilder.append(pulllRequestConfig.getChangelog().replace("TIME", updateTime).replace("VERSION", latestVersion)).append("\n");
-                contentBuilder.append("- Type:requirement").append("\n");
+               /* contentBuilder.append("- Type:requirement").append("\n");
                 contentBuilder.append("- CVE:NA").append("\n");
-                contentBuilder.append("- SUG:NA").append("\n");
-                String format = String.format("- DESC:update %s to %s \n", name, latestVersion);
-                contentBuilder.append(format).append("\n");
+                contentBuilder.append("- SUG:NA").append("\n");*/
+                String format = String.format("- update %s to %s \n", name, latestVersion);
+                Document htmlDoc = HtmlParseUtil.getHtmlDoc("https://metacpan.org/dist/"+name.replace("perl-","") );
+                if(htmlDoc!=null){
+                    String s1 = HtmlParseUtil.parseMetacpanChanggeLog(htmlDoc);
+                    contentBuilder.append(s1).append("\n");
+                }else {
+                    contentBuilder.append(format);
+                }
+
             }
             if (i == content.size() - 1) {
                 contentBuilder.append("\n");

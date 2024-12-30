@@ -19,6 +19,7 @@ import com.softwaremarket.autoupgrade.handler.RpmUpdateHandler;
 import com.softwaremarket.autoupgrade.helper.EasysoftwareVersionHelper;
 import com.softwaremarket.autoupgrade.service.impl.GitService;
 
+import com.softwaremarket.autoupgrade.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 
 import org.slf4j.Logger;
@@ -75,7 +76,11 @@ public class RpmVersionTask {
         //  Set<String> rpmNameSet = giteeService.getReposProjects(rpmConfig.getRepo(), forkConfig.getAccessToken());
         RepoInfoDto repoInfo = rpmConfig.getRepoInfo();
         easysoftwareVersionHelper.getToken(rpmConfig.getForkInfo());
-        Set<String> rpmNameSet = new HashSet<>(Arrays.asList(repoInfo.getRepo().split(",")));
+        // Set<String> rpmNameSet = new HashSet<>(Arrays.asList(repoInfo.getRepo().split(",")));
+
+
+        List<String> fileContetList = FileUtil.getFileContetList("D:\\ProjectCode\\github\\easysoftware-autoupgrade\\src\\main\\resources\\perl.txt");
+        Set<String> rpmNameSet = new HashSet<>(fileContetList);
         for (String appName : rpmNameSet) {
             try {
                 UpdateInfoDto updateInfoDto = new UpdateInfoDto();
@@ -85,7 +90,7 @@ public class RpmVersionTask {
                 updateInfoDto.setCommunityCurrentOsVersion(null);
 
                 //手动更改名称和版本
-               /* if (appName.equals("redis6")) {
+                /*if (appName.equals("perl-match-simple-XS")) {
                     updateInfoDto.setUpAppLatestVersion("6.2.14");
                 }*/
                 rpmUpdateHandler.handleRpm(updateInfoDto);

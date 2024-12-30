@@ -224,4 +224,16 @@ public final class FileUtil {
     }
 
 
+    public static void writeFileContext(String filePath, String content) {
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
+            writer.append(content);
+            writer.newLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
+
+
+

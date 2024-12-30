@@ -19,4 +19,5 @@ public class CollectConfig {
 
     String dockerHubOpeneulerHomepage;
     String dockerHubOpeneulerAuthorization;
+    String changgelogInfoUrl;
 }

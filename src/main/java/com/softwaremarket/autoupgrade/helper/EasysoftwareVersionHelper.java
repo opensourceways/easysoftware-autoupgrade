@@ -27,7 +27,7 @@ public class EasysoftwareVersionHelper {
 
     public void initUpdateInfo(UpdateInfoDto premiumAppUpdateInfoDto) {
         String projectsInfoUrl = collectConfig.getProjectsInfoUrl();
-        String url = projectsInfoUrl + premiumAppUpdateInfoDto.getAppName().replace("rubygem-","").replace("perl-","").replace("python-","");
+        String url = projectsInfoUrl + premiumAppUpdateInfoDto.getAppName().replace("rubygem-","").replace("perl-","").replace("python-","").replace("nodejs-","");
         String result = HttpRequestUtil.sendGet(url, new HashMap<>());
         if (result != null) {
             JSONObject resultObj = JacksonUtils.toObject(JSONObject.class, result);
@@ -41,7 +41,7 @@ public class EasysoftwareVersionHelper {
             for (Object item : items) {
                 JSONObject o = new JSONObject((Map) item);
                 //"GitHub".equals(o.getString("backend"))
-                List<String> backendList = Arrays.asList("GitHub", "Rubygems", "CPAN (perl)","PyPI");
+                List<String> backendList = Arrays.asList("GitHub", "Rubygems", "CPAN (perl)","PyPI","npmjs");
                 if ("app_up".equals(o.getString("tag"))||backendList.contains(o.getString("backend"))) {
                     premiumAppUpdateInfoDto.setUpAppLatestVersion(o.getString("version").replace("_", "."));
                 }

@@ -1,0 +1,129 @@
+perl-Business-ISBN-Data  : https://cpan.metacpan.org/authors/id/B/BD/BDFOY/Business-ISBN-Data-20241206.001.tar.gz
+perl-Crypt-PasswdMD5
+perl-Test-TrailingSpace  : https://cpan.metacpan.org/modules/by-module/Test/Test-TrailingSpace-0.0601.tar.gz
+perl-String-Dirify
+perl-FileHandle-Fmode  : https://cpan.metacpan.org/modules/by-module/FileHandle/FileHandle-Fmode-0.15.tar.gz
+perl-Config-Perl-V
+perl-Test-utf8  : http://www.cpan.org/authors/id/M/MA/MARKF/Test-utf8-1.03.tar.gz
+perl-Hash-Merge-Simple  : https://cpan.metacpan.org/modules/by-module/Hash/Hash-Merge-Simple-0.052.tar.gz
+perl-B-COW  : https://cpan.metacpan.org/modules/by-module/B/B-COW-0.004.tar.gz
+perl-Tree-DAG_Node
+perl-version  : https://cpan.metacpan.org/authors/id/L/LE/LEONT/version-%{__version__}.tar.gz
+perl-DBIx-Connector  : http://www.cpan.org/authors/id/D/DW/DWHEELER/DBIx-Connector-0.60.tar.gz
+perl-YAML-LibYAML  : https://cpan.metacpan.org/modules/by-module/YAML/YAML-LibYAML-0.902.0.tar.gz
+perl-DBD-CSV
+perl-Math-BaseCnv
+perl-Tree-Simple
+perl-Syntax-Keyword-Junction  : https://cpan.metacpan.org/authors/id/F/FR/FREW/Syntax-Keyword-Junction-0.003009.tar.gz
+perl-Regexp-Assemble
+perl-Digest-MD5  : https://cpan.metacpan.org/authors/id/G/GA/GAAS/Digest-MD5-2.59.tar.gz
+perl-Log-Contextual  : https://cpan.metacpan.org/authors/id/F/FR/FREW/Log-Contextual-0.009001.tar.gz
+perl-System-Info
+perl-Email-MIME  : https://cpan.metacpan.org/modules/by-module/Email/Email-MIME-1.954.tar.gz
+perl-User-Identity  : https://cpan.metacpan.org/modules/by-module/User/User-Identity-1.02.tar.gz
+perl-Module-Build-Tiny  : https://cpan.metacpan.org/modules/by-module/Module/Module-Build-Tiny-0.051.tar.gz
+perl-Text-ParseWords  : https://cpan.metacpan.org/authors/id/C/CH/CHORNY/Text-ParseWords-3.31.tar.gz
+perl-Text-CSV_XS
+perl-Set-Tiny  : http://www.cpan.org/authors/id/T/TR/TRENDELS/Set-Tiny-0.06.tar.gz
+perl-MooX-StrictConstructor  : http://www.cpan.org/authors/id/H/HA/HARTZELL/MooX-StrictConstructor-0.013.tar.gz
+perl-Params-Util  : https://cpan.metacpan.org/authors/id/A/AD/ADAMK/Params-Util-1.102.tar.gz
+perl-Getopt-Simple
+perl-gettext  : https://cpan.metacpan.org/authors/id/P/PV/PVANDRY/Locale-gettext-5.7.3.tar.gz
+python-path
+python-hamcrest
+python-meson-python
+python-hwdata  : https://github.com/xsuchy/python-hwdata/archive/python-hwdata-0.390-1.tar.gz
+python-markdown
+python-parse
+python-nbformat
+python-Flask-SQLAlchemy
+python-aexpect
+python-rpmautospec-core
+python-cheetah  : https://github.com/CheetahTemplate3/cheetah3/archive/refs/tags/2.4.4.tar.gz
+python-robotframework
+python-docopt-ng
+python-ansible-runner  : https://files.pythonhosted.org/packages/source/a/%{pypi_name}/%{pypi_name}-2.4.0.tar.gz
+python-argon2-cffi-bindings
+python-genshi
+nodejs-tunnel-agent
+nodejs-less-plugin-clean-css
+nodejs-argv-parse
+nodejs-es6-weak-map
+nodejs-json-stringify-safe
+nodejs-d
+nodejs-block-stream
+nodejs-faye-websocket
+nodejs-clone  : https://github.com/pvorb/clone/archive/v0.47.tar.gz
+nodejs-generate-object-property
+nodejs-define-properties
+nodejs-commonmark  : https://github.com/jgm/commonmark.js/archive/0.9.1.tar.gz
+nodejs-diff  : https://github.com/kpdecker/jsdiff/archive/v7.0.0.tar.gz
+nodejs-is-my-json-valid
+nodejs-xtend
+nodejs-formatio
+nodejs-delegates
+nodejs-normalize-package-data
+nodejs-string
+nodejs-path-is-absolute
+nodejs-dotenv
+nodejs-is-object
+nodejs-request  : https://github.com/request/request/archive/v2.88.2/request-2.88.2.tar.gz
+nodejs-is-regex
+nodejs-has-ansi  : https://github.com/chalk/has-ansi/archive/6.0.0.tar.gz
+nodejs-github-url-from-git
+nodejs-jed
+nodejs-deep-equal
+nodejs-assertion-error  : https://github.com/chaijs/assertion-error/archive/2.0.1/assertion-error-2.0.1.tar.gz
+nodejs-dateformat  : https://github.com/felixge/node-dateformat/archive/5.0.3.tar.gz
+nodejs-simple-assert  : https://github.com/chaijs/simple-assert/archive/%{commit}/simple-assert-%{commit}.tar.gz
+nodejs-fstream  : https://github.com/isaacs/fstream/archive/v0.0.6.tar.gz
+nodejs-intl
+nodejs-deep-eql  : https://github.com/chaijs/deep-eql/archive/5.0.2.tar.gz
+nodejs-yarn
+nodejs-with  : https://github.com/ForbesLindesay/with/archive/7.0.2-canary-3.tar.gz
+nodejs-is-property  : https://github.com/mikolalysenko/is-property/archive/%{commit}/nodejs-is-property-1.0.2-%{shortcommit}.tar.gz
+nodejs-object-inspect
+nodejs-less-plugin-clean-css
+nodejs-argv-parse
+python-rpmautospec-core
+nodejs-xtend
+python-meh  : https://github.com/rhinstaller/python-meh/archive/python-meh-1.2.1.tar.gz
+perl-Module-Extract-Use  : http://www.cpan.org/authors/id/B/BD/BDFOY/Module-Extract-Use-1.053.tar.gz
+nodejs-jed
+nodejs-tap-parser  : https://github.com/substack/tap-parser/archive/v18.0.0.tar.gz
+python-jaraco-context  : https://files.pythonhosted.org/packages/source/j/jaraco.context/jaraco.context-6.0.1.tar.gz
+python-yubico  : https://github.com/Yubico/python-yubico/archive/python-yubico-1.6.2.tar.gz
+
+
+
+
+
+perl-Business-ISBN-Data  : https://cpan.metacpan.org/authors/id/B/BD/BDFOY/Business-ISBN-Data-20241224.001.tar.gz
+perl-Crypt-PasswdMD5
+perl-String-Dirify
+perl-Config-Perl-V
+perl-Test-utf8  : http://www.cpan.org/authors/id/M/MA/MARKF/Test-utf8-1.03.tar.gz
+perl-Tree-DAG_Node
+perl-version  : https://cpan.metacpan.org/authors/id/L/LE/LEONT/version-%{__version__}.tar.gz
+perl-DBIx-Connector  : http://www.cpan.org/authors/id/D/DW/DWHEELER/DBIx-Connector-0.60.tar.gz
+perl-YAML-LibYAML  : https://cpan.metacpan.org/modules/by-module/YAML/YAML-LibYAML-0.902.0.tar.gz
+perl-DBD-CSV
+perl-Math-BaseCnv
+perl-Test-Manifest  : https://github.com/briandfoy/test-manifest/archive/release-2.022/test-manifest-release-2.022.tar.gz
+perl-Tree-Simple
+perl-Syntax-Keyword-Junction  : https://cpan.metacpan.org/authors/id/F/FR/FREW/Syntax-Keyword-Junction-0.003009.tar.gz
+perl-Regexp-Assemble
+perl-Digest-MD5  : https://cpan.metacpan.org/authors/id/G/GA/GAAS/Digest-MD5-2.59.tar.gz
+perl-Log-Contextual  : https://cpan.metacpan.org/authors/id/F/FR/FREW/Log-Contextual-0.009001.tar.gz
+perl-System-Info
+perl-Text-ParseWords  : https://cpan.metacpan.org/authors/id/C/CH/CHORNY/Text-ParseWords-3.31.tar.gz
+perl-Text-CSV_XS
+perl-Set-Tiny  : http://www.cpan.org/authors/id/T/TR/TRENDELS/Set-Tiny-0.06.tar.gz
+perl-MooX-StrictConstructor  : http://www.cpan.org/authors/id/H/HA/HARTZELL/MooX-StrictConstructor-0.013.tar.gz
+perl-Params-Util  : https://cpan.metacpan.org/authors/id/A/AD/ADAMK/Params-Util-1.102.tar.gz
+perl-Getopt-Simple
+perl-gettext  : https://cpan.metacpan.org/authors/id/P/PV/PVANDRY/Locale-gettext-5.7.3.tar.gz
+perl-Digest-HMAC  : https://github.com/arodland/Digest-HMAC/archive/refs/tags/1.05.tar.gz
+perl-Test-NoWarnings  : http://www.cpan.org/authors/id/A/AD/ADAMK/Test-NoWarnings-1.06.tar.gz
+perl-Log-Handler  : https://www.cpan.org/modules/by-module/Log/Log-Handler-0.89.tar.gz
+perl-Getopt-Euclid  : http://www.cpan.org/authors/id/F/FA/FANGLY/Getopt-Euclid-0.4.8.tar.gz
